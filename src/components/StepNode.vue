@@ -11,11 +11,13 @@ const isSpecial = computed(() => props.data.kind === 'entry' && props.data.type 
 </script>
 
 <template>
-  <div class="step-node" :class="[`kind-${data.kind}`, { 'is-special': isSpecial }]">
-    <Handle type="target" :position="Position.Left" />
-    <img class="step-icon" :src="icon" :alt="data.type" />
+  <div class="step-node">
+    <div class="step-node-card" :class="[`kind-${data.kind}`, { 'is-special': isSpecial }]">
+      <Handle type="target" :position="Position.Left" />
+      <img class="step-icon" :src="icon" :alt="data.type" />
+      <Handle type="source" :position="Position.Right" />
+    </div>
     <span class="step-name" :title="data.name">{{ data.name }}</span>
-    <Handle type="source" :position="Position.Right" />
   </div>
 </template>
 
@@ -25,25 +27,33 @@ const isSpecial = computed(() => props.data.kind === 'entry' && props.data.type 
   flex-direction: column;
   align-items: center;
   gap: 3px;
+}
+
+.step-node-card {
   padding: 5px 5px 7px;
   min-width: 86px;
   max-width: 108px;
-  min-height: 58px;
+  min-height: 42px;
   background: #fcfdff;
   border: 1px solid #8d97a9;
   border-radius: 3px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-sizing: border-box;
   font-family: Arial, Helvetica, sans-serif;
   font-size: 10px;
   color: #1f2937;
   white-space: normal;
   text-align: center;
-  box-sizing: border-box;
 }
-.step-node.kind-entry {
+
+.step-node-card.kind-entry {
   border-color: #64748b;
   background: #f5f7fb;
 }
-.step-node.is-special {
+
+.step-node-card.is-special {
   border-color: #2b944f;
   background: #f2fbf4;
 }
@@ -66,7 +76,7 @@ const isSpecial = computed(() => props.data.kind === 'entry' && props.data.type 
   cursor: default;
 }
 
-.step-node:deep(.vue-flow__handle) {
+.step-node-card:deep(.vue-flow__handle) {
   width: 9px;
   height: 9px;
   border-width: 1px;

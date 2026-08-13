@@ -27,6 +27,6 @@ describe('StepNode', () => {
       },
     })
 
-    expect(wrapper.classes()).toContain('is-special')
+    expect(wrapper.find('.step-node-card').classes()).toContain('is-special')
   })
 })
