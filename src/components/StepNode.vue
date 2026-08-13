@@ -8,14 +8,17 @@ const props = defineProps<{ data: StepNodeData }>()
 
 const icon = computed(() => resolveStepIcon({ type: props.data.type, kind: props.data.kind }))
 const isSpecial = computed(() => props.data.kind === 'entry' && props.data.type === 'SPECIAL')
+const maxLineChars = 16
 const displayName = computed(() => {
   const name = props.data.name ?? ''
-  if (name.length <= 16) return name
+  if (name.length <= maxLineChars) return name
 
   const words = name.split(/\s+/).filter(Boolean)
   if (words.length === 0) return ''
   if (words.length === 1) {
-    return `${name.slice(0, 16)}\n${name.slice(16)}`.trimEnd()
+    const firstLine = name.slice(0, maxLineChars)
+    const secondLineRaw = name.slice(maxLineChars)
+    return `${firstLine}\n${secondLineRaw.length > maxLineChars - 3 ? `${secondLineRaw.slice(0, maxLineChars - 3)}...` : secondLineRaw}`
   }
 
   let firstLine = ''
@@ -23,17 +26,20 @@ const displayName = computed(() => {
 
   for (let i = 0; i < words.length; i += 1) {
     const candidate = firstLine.length === 0 ? words[i] : `${firstLine} ${words[i]}`
-    if (candidate.length > 16) break
+    if (candidate.length > maxLineChars) break
     firstLine = candidate
     nextIndex = i + 1
   }
 
   if (!firstLine) {
-    return `${name.slice(0, 16)}\n${name.slice(16)}`.trimEnd()
+    const firstLine = name.slice(0, maxLineChars)
+    const secondLineRaw = name.slice(maxLineChars)
+    return `${firstLine}\n${secondLineRaw.length > maxLineChars - 3 ? `${secondLineRaw.slice(0, maxLineChars - 3)}...` : secondLineRaw}`
   }
 
   const secondLine = words.slice(nextIndex).join(' ')
-  return `${firstLine}\n${secondLine}`.trimEnd()
+  const trimmedSecond = secondLine.length > maxLineChars ? `${secondLine.slice(0, maxLineChars - 3)}...` : secondLine
+  return `${firstLine}\n${trimmedSecond}`.trimEnd()
 })
 </script>
 
