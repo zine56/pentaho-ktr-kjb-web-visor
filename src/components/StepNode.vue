@@ -14,7 +14,7 @@ const isSpecial = computed(() => props.data.kind === 'entry' && props.data.type 
   <div class="step-node" :class="[`kind-${data.kind}`, { 'is-special': isSpecial }]">
     <Handle type="target" :position="Position.Left" />
     <img class="step-icon" :src="icon" :alt="data.type" />
-    <span class="step-name">{{ data.name }}</span>
+    <span class="step-name" :title="data.name">{{ data.name }}</span>
     <Handle type="source" :position="Position.Right" />
   </div>
 </template>
@@ -57,15 +57,13 @@ const isSpecial = computed(() => props.data.kind === 'entry' && props.data.type 
   font-size: 9px;
   line-height: 1.15;
   overflow: hidden;
-  text-wrap: balance;
   text-overflow: ellipsis;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
   max-width: 94px;
-  min-height: 2.4em;
+  width: 100%;
+  white-space: nowrap;
+  display: block;
   color: #334155;
-  letter-spacing: 0.01em;
+  cursor: default;
 }
 
 .step-node:deep(.vue-flow__handle) {
