@@ -25,14 +25,15 @@ const isSpecial = computed(() => props.data.kind === 'entry' && props.data.type 
   flex-direction: column;
   align-items: center;
   gap: 4px;
-  padding: 6px 8px 8px;
-  min-width: 92px;
+  padding: 6px 6px 8px;
+  min-width: 88px;
+  max-width: 110px;
   min-height: 56px;
   background: #ffffff;
   border: 1px solid #94a3b8;
-  border-radius: 6px;
+  border-radius: 4px;
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.18);
-  font-size: 12px;
+  font-size: 11px;
   color: #0f172a;
   white-space: normal;
   text-align: center;
@@ -46,17 +47,22 @@ const isSpecial = computed(() => props.data.kind === 'entry' && props.data.type 
   background: #f0fdf4;
 }
 .step-icon {
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
   flex: none;
   object-fit: contain;
 }
 .step-name {
-  font-size: 11px;
-  line-height: 1.15;
+  font-size: 10px;
+  line-height: 1.2;
   overflow: hidden;
+  text-wrap: balance;
   text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 160px;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  max-width: 96px;
+  min-height: 2.4em;
+  color: #334155;
 }
 </style>
