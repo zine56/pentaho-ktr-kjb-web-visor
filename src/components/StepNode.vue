@@ -24,45 +24,53 @@ const isSpecial = computed(() => props.data.kind === 'entry' && props.data.type 
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  padding: 6px 6px 8px;
-  min-width: 88px;
-  max-width: 110px;
-  min-height: 56px;
-  background: #ffffff;
-  border: 1px solid #94a3b8;
-  border-radius: 4px;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.18);
-  font-size: 11px;
-  color: #0f172a;
+  gap: 3px;
+  padding: 5px 5px 7px;
+  min-width: 86px;
+  max-width: 108px;
+  min-height: 58px;
+  background: #fcfdff;
+  border: 1px solid #8d97a9;
+  border-radius: 3px;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 10px;
+  color: #1f2937;
   white-space: normal;
   text-align: center;
+  box-sizing: border-box;
 }
 .step-node.kind-entry {
   border-color: #64748b;
-  background: #f8fafc;
+  background: #f5f7fb;
 }
 .step-node.is-special {
-  border-color: #16a34a;
-  background: #f0fdf4;
+  border-color: #2b944f;
+  background: #f2fbf4;
 }
 .step-icon {
-  width: 24px;
-  height: 24px;
+  width: 26px;
+  height: 26px;
   flex: none;
   object-fit: contain;
 }
 .step-name {
-  font-size: 10px;
-  line-height: 1.2;
+  font-size: 9px;
+  line-height: 1.15;
   overflow: hidden;
   text-wrap: balance;
   text-overflow: ellipsis;
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
-  max-width: 96px;
+  max-width: 94px;
   min-height: 2.4em;
   color: #334155;
+  letter-spacing: 0.01em;
+}
+
+.step-node:deep(.vue-flow__handle) {
+  width: 9px;
+  height: 9px;
+  border-width: 1px;
 }
 </style>
