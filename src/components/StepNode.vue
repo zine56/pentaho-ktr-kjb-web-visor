@@ -30,10 +30,8 @@ const isSpecial = computed(() => props.data.kind === 'entry' && props.data.type 
 }
 
 .step-node-card {
-  padding: 5px 5px 7px;
-  min-width: 86px;
-  max-width: 108px;
-  min-height: 42px;
+  width: 34px;
+  height: 34px;
   background: #fcfdff;
   border: 1px solid #8d97a9;
   border-radius: 3px;
