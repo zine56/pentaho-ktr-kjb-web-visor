@@ -22,18 +22,20 @@ const isSpecial = computed(() => props.data.kind === 'entry' && props.data.type 
 <style scoped>
 .step-node {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 8px;
-  padding: 6px 12px;
-  min-width: 120px;
-  min-height: 36px;
+  gap: 4px;
+  padding: 6px 8px 8px;
+  min-width: 92px;
+  min-height: 56px;
   background: #ffffff;
   border: 1px solid #94a3b8;
   border-radius: 6px;
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.18);
   font-size: 12px;
   color: #0f172a;
-  white-space: nowrap;
+  white-space: normal;
+  text-align: center;
 }
 .step-node.kind-entry {
   border-color: #64748b;
@@ -44,14 +46,17 @@ const isSpecial = computed(() => props.data.kind === 'entry' && props.data.type 
   background: #f0fdf4;
 }
 .step-icon {
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
   flex: none;
   object-fit: contain;
 }
 .step-name {
+  font-size: 11px;
+  line-height: 1.15;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
   max-width: 160px;
 }
 </style>
