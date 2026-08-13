@@ -8,6 +8,14 @@ const props = defineProps<{ data: StepNodeData }>()
 
 const icon = computed(() => resolveStepIcon({ type: props.data.type, kind: props.data.kind }))
 const isSpecial = computed(() => props.data.kind === 'entry' && props.data.type === 'SPECIAL')
+const displayName = computed(() => {
+  const name = props.data.name ?? ''
+  if (name.length <= 16) return name
+  const hardBreak = 16
+  const left = name.slice(0, hardBreak).trimEnd()
+  const right = name.slice(hardBreak).trimStart()
+  return `${left}\n${right}`
+})
 </script>
 
 <template>
@@ -17,7 +25,7 @@ const isSpecial = computed(() => props.data.kind === 'entry' && props.data.type 
       <img class="step-icon" :src="icon" :alt="data.type" />
       <Handle type="source" :position="Position.Right" />
     </div>
-    <span class="step-name" :title="data.name">{{ data.name }}</span>
+    <span class="step-name" :title="data.name">{{ displayName }}</span>
   </div>
 </template>
 
@@ -64,12 +72,15 @@ const isSpecial = computed(() => props.data.kind === 'entry' && props.data.type 
 .step-name {
   font-size: 9px;
   line-height: 1.15;
+  text-align: center;
   overflow: hidden;
-  text-overflow: ellipsis;
   max-width: 94px;
   width: 100%;
-  white-space: nowrap;
-  display: block;
+  white-space: pre-line;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-height: 1.1;
   color: #334155;
   cursor: default;
 }
