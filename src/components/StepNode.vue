@@ -11,10 +11,29 @@ const isSpecial = computed(() => props.data.kind === 'entry' && props.data.type 
 const displayName = computed(() => {
   const name = props.data.name ?? ''
   if (name.length <= 16) return name
-  const hardBreak = 16
-  const left = name.slice(0, hardBreak).trimEnd()
-  const right = name.slice(hardBreak).trimStart()
-  return `${left}\n${right}`
+
+  const words = name.split(/\s+/).filter(Boolean)
+  if (words.length === 0) return ''
+  if (words.length === 1) {
+    return `${name.slice(0, 16)}\n${name.slice(16)}`.trimEnd()
+  }
+
+  let firstLine = ''
+  let nextIndex = 0
+
+  for (let i = 0; i < words.length; i += 1) {
+    const candidate = firstLine.length === 0 ? words[i] : `${firstLine} ${words[i]}`
+    if (candidate.length > 16) break
+    firstLine = candidate
+    nextIndex = i + 1
+  }
+
+  if (!firstLine) {
+    return `${name.slice(0, 16)}\n${name.slice(16)}`.trimEnd()
+  }
+
+  const secondLine = words.slice(nextIndex).join(' ')
+  return `${firstLine}\n${secondLine}`.trimEnd()
 })
 </script>
 
