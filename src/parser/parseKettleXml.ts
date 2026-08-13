@@ -1,0 +1,163 @@
+import type { KettleEdge, KettleGraph, KettleKind, KettleNode } from '../model/graph'
+
+export class KettleParseError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'KettleParseError'
+  }
+}
+
+/** Returns the first direct child element of `el` whose local name is `tag`. */
+function child(el: Element | null, tag: string): Element | null {
+  if (!el) return null
+  for (let i = 0; i < el.children.length; i += 1) {
+    const c = el.children[i]
+    if ((c.localName ?? c.nodeName) === tag) return c
+  }
+  return null
+}
+
+function textOf(el: Element | null, tag: string): string | undefined {
+  const c = child(el, tag)
+  const t = c?.textContent?.trim()
+  return t === '' ? undefined : t
+}
+
+function parseBool(value: string | undefined): boolean {
+  if (value === undefined) return true
+  const v = value.trim().toUpperCase()
+  return v === 'Y' || v === 'TRUE' || v === '1'
+}
+
+function parseXml(xml: string): Document {
+  const doc = new DOMParser().parseFromString(xml, 'application/xml')
+  const parserError = doc.getElementsByTagName('parsererror')[0]
+  if (parserError) {
+    throw new KettleParseError('Malformed XML: ' + (parserError.textContent ?? 'parse error').trim())
+  }
+  if (!doc.documentElement) {
+    throw new KettleParseError('Malformed XML: no document element')
+  }
+  return doc
+}
+
+function detectKindFromRoot(root: Element, fileName?: string): KettleKind {
+  const local = root.localName ?? root.nodeName
+  if (local === 'transformation') return 'transformation'
+  if (local === 'job') return 'job'
+  const ext = fileName?.split('.').pop()?.toLowerCase()
+  if (ext === 'ktr') return 'transformation'
+  if (ext === 'kjb') return 'job'
+  throw new KettleParseError(
+    'Unrecognized Kettle file: expected a <transformation> (.ktr) or <job> (.kjb) root element.',
+  )
+}
+
+/** Detect the Kettle file kind from its XML, with the filename extension as a secondary hint. */
+export function detectKind(xml: string, fileName?: string): KettleKind {
+  return detectKindFromRoot(parseXml(xml).documentElement, fileName)
+}
+
+interface RawNode {
+  name: string
+  type: string
+  kind: 'step' | 'entry'
+  x?: number
+  y?: number
+  draw?: boolean
+}
+
+function parseNumber(value: string | undefined): number | undefined {
+  if (value === undefined || value.trim() === '') return undefined
+  const n = Number(value)
+  return Number.isFinite(n) ? n : undefined
+}
+
+function readNodes(stepElements: HTMLCollectionOf<Element>, kind: 'step' | 'entry'): RawNode[] {
+  const nodes: RawNode[] = []
+  for (let i = 0; i < stepElements.length; i += 1) {
+    const el = stepElements[i]
+    const name = textOf(el, 'name') ?? ''
+    const type = textOf(el, 'type') ?? ''
+    const gui = child(el, 'GUI')
+    nodes.push({
+      name,
+      type,
+      kind,
+      x: parseNumber(textOf(gui, 'xloc')),
+      y: parseNumber(textOf(gui, 'yloc')),
+      draw: textOf(gui, 'draw') === undefined ? undefined : parseBool(textOf(gui, 'draw')),
+    })
+  }
+  return nodes
+}
+
+function disambiguate(raw: RawNode[]): KettleNode[] {
+  const seen = new Map<string, number>()
+  return raw.map((n) => {
+    const count = seen.get(n.name) ?? 0
+    seen.set(n.name, count + 1)
+    const id = count === 0 ? n.name : `${n.name} (${count + 1})`
+    return { id, name: n.name, type: n.type, kind: n.kind, x: n.x, y: n.y, draw: n.draw }
+  })
+}
+
+export function parseKettleFile(xml: string, fileName?: string): KettleGraph {
+  const doc = parseXml(xml)
+  const root = doc.documentElement
+  const kind = detectKindFromRoot(root, fileName)
+
+  const rawNodes = readNodes(root.getElementsByTagName(kind === 'transformation' ? 'step' : 'entry'), kind === 'transformation' ? 'step' : 'entry')
+  const nodes = disambiguate(rawNodes)
+
+  const idsByName = new Map<string, string[]>()
+  for (const n of nodes) {
+    const list = idsByName.get(n.name) ?? []
+    list.push(n.id)
+    idsByName.set(n.name, list)
+  }
+
+  const edges: KettleEdge[] = []
+  const hops = root.getElementsByTagName('hop')
+  const fromIdx = new Map<string, number>()
+  const toIdx = new Map<string, number>()
+  for (let i = 0; i < hops.length; i += 1) {
+    const hop = hops[i]
+    const from = textOf(hop, 'from') ?? ''
+    const to = textOf(hop, 'to') ?? ''
+    const enabled = parseBool(textOf(hop, 'enabled'))
+
+    const fromList = idsByName.get(from) ?? []
+    const toList = idsByName.get(to) ?? []
+    if (fromList.length === 0 || toList.length === 0) {
+      throw new KettleParseError(`Hop references a missing ${fromList.length === 0 ? 'source' : 'target'} step "${fromList.length === 0 ? from : to}".`)
+    }
+    const fromIndex = fromIdx.get(from) ?? 0
+    const toIndex = toIdx.get(to) ?? 0
+    fromIdx.set(from, fromIndex + 1)
+    toIdx.set(to, toIndex + 1)
+
+    const fromId = fromList[Math.min(fromIndex, fromList.length - 1)]
+    const toId = toList[Math.min(toIndex, toList.length - 1)]
+
+    edges.push({
+      id: `e${i}`,
+      from: fromId,
+      to: toId,
+      enabled,
+      evaluation: textOf(hop, 'evaluation') === undefined ? undefined : parseBool(textOf(hop, 'evaluation')),
+      unconditional: textOf(hop, 'unconditional') === undefined ? undefined : parseBool(textOf(hop, 'unconditional')),
+    })
+  }
+
+  const name = kind === 'transformation'
+    ? textOf(child(root, 'info'), 'name')
+    : textOf(root, 'name')
+
+  return {
+    kind,
+    name: name ?? fileName?.split('/').pop()?.replace(/\.[^.]+$/, '') ?? 'Untitled',
+    nodes,
+    edges,
+  }
+}
