@@ -66,6 +66,8 @@ export const ICON_MAP: Record<string, string> = {
   S3CSVINPUT: 'S3I.svg',
   XMLInputStream: 'xml_input_stream.svg',
   AddXML: 'add_xml.svg',
+  ModifiedJavaScriptValue: 'ModifiedJavaScriptValue.png',
+  'Modified JavaScript Value': 'ModifiedJavaScriptValue.png',
 
   // Job entries
   SPECIAL: FALLBACK_SPECIAL,
