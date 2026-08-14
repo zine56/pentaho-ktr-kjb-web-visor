@@ -51,6 +51,24 @@ const FILTER_RESULT_LABEL_STYLE = {
   },
 } as const
 
+function resolveEdgeHandles(
+  source: { x: number; y: number },
+  target: { x: number; y: number },
+): { sourceHandle: string; targetHandle: string } {
+  const dx = target.x - source.x
+  const dy = target.y - source.y
+
+  if (Math.abs(dx) >= Math.abs(dy)) {
+    return dx >= 0
+      ? { sourceHandle: 'source-right', targetHandle: 'target-left' }
+      : { sourceHandle: 'source-left', targetHandle: 'target-right' }
+  }
+
+  return dy >= 0
+    ? { sourceHandle: 'source-bottom', targetHandle: 'target-top' }
+    : { sourceHandle: 'source-top', targetHandle: 'target-bottom' }
+}
+
 function toNoteNode(note: KettleNote): Node<NoteNodeData> {
   return {
     id: note.id,
@@ -118,11 +136,17 @@ export function toVueFlow(graph: KettleGraph): { nodes: Node<FlowNodeData>[]; ed
       ? FILTER_RESULT_LABEL_STYLE[e.filterResult]
       : undefined
     const markerColor = typeof style.stroke === 'string' ? style.stroke : '#b1b1b7'
+    const handles = resolveEdgeHandles(
+      positions[e.from] ?? { x: 0, y: 0 },
+      positions[e.to] ?? { x: 0, y: 0 },
+    )
 
     return {
       id: e.id,
       source: e.from,
       target: e.to,
+      sourceHandle: handles.sourceHandle,
+      targetHandle: handles.targetHandle,
       class: Array.from(edgeClass),
       markerEnd: {
         type: MarkerType.ArrowClosed,

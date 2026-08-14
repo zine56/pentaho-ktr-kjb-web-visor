@@ -10,6 +10,12 @@ const icon = computed(() => resolveStepIcon({ type: props.data.type, kind: props
 const isSpecial = computed(() => props.data.kind === 'entry' && props.data.type === 'SPECIAL')
 const isHighlighted = computed(() => props.data.highlighted ?? false)
 const maxLineChars = 16
+const handlePositions = [
+  { id: 'left', position: Position.Left },
+  { id: 'right', position: Position.Right },
+  { id: 'top', position: Position.Top },
+  { id: 'bottom', position: Position.Bottom },
+] as const
 const tooltip = computed(() =>
   isHighlighted.value
     ? `${props.data.name} (uid: ${props.data.uid}) [deeplink match]`
@@ -52,9 +58,23 @@ const displayName = computed(() => {
 <template>
   <div class="step-node" :title="tooltip" :data-node-uid="data.uid" :class="{ highlighted: isHighlighted }">
     <div class="step-node-card" :class="[`kind-${data.kind}`, { 'is-special': isSpecial }]">
-      <Handle type="target" :position="Position.Left" class="target-handle" />
+      <Handle
+        v-for="handle in handlePositions"
+        :id="`target-${handle.id}`"
+        :key="`target-${handle.id}`"
+        type="target"
+        :position="handle.position"
+        class="target-handle"
+      />
       <img class="step-icon" :src="icon" :alt="data.type" />
-      <Handle type="source" :position="Position.Right" class="source-handle" />
+      <Handle
+        v-for="handle in handlePositions"
+        :id="`source-${handle.id}`"
+        :key="`source-${handle.id}`"
+        type="source"
+        :position="handle.position"
+        class="source-handle"
+      />
     </div>
     <span class="step-name" :title="data.name">{{ displayName }}</span>
   </div>
@@ -130,9 +150,6 @@ const displayName = computed(() => {
   width: 9px;
   height: 9px;
   border-width: 1px;
-}
-
-.step-node-card:deep(.target-handle) {
   border-color: transparent;
   background: transparent;
 }
