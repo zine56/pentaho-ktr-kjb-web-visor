@@ -26,6 +26,8 @@ export interface KettleEdge {
   from: string
   to: string
   enabled: boolean
+  /** Transformation hops leaving a Filter Rows step only. */
+  filterResult?: 'true' | 'false'
   /** Job hops only. */
   evaluation?: boolean
   /** Job hops only. */

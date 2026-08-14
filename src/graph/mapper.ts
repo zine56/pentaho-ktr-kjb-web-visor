@@ -38,6 +38,19 @@ const ERROR_HANDLER_EDGE_STYLE = {
   strokeWidth: 2.4,
 }
 
+const FILTER_RESULT_LABEL_STYLE = {
+  true: {
+    text: '#166534',
+    background: '#f0fdf4',
+    border: '#86efac',
+  },
+  false: {
+    text: '#991b1b',
+    background: '#fef2f2',
+    border: '#fca5a5',
+  },
+} as const
+
 function toNoteNode(note: KettleNote): Node<NoteNodeData> {
   return {
     id: note.id,
@@ -101,12 +114,33 @@ export function toVueFlow(graph: KettleGraph): { nodes: Node<FlowNodeData>[]; ed
       edgeClass.add('error-handler-edge')
     }
 
+    const filterLabelStyle = e.filterResult
+      ? FILTER_RESULT_LABEL_STYLE[e.filterResult]
+      : undefined
+
     return {
       id: e.id,
       source: e.from,
       target: e.to,
       class: Array.from(edgeClass),
       ...(Object.keys(style).length === 0 ? {} : { style }),
+      ...(e.filterResult && filterLabelStyle
+        ? {
+            label: e.filterResult,
+            labelStyle: {
+              fill: filterLabelStyle.text,
+              fontSize: 12,
+              fontWeight: 700,
+            },
+            labelBgStyle: {
+              fill: filterLabelStyle.background,
+              stroke: filterLabelStyle.border,
+              strokeWidth: 1,
+            },
+            labelBgPadding: [5, 3] as [number, number],
+            labelBgBorderRadius: 4,
+          }
+        : {}),
     }
   })
 

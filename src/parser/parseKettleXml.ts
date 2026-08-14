@@ -77,6 +77,8 @@ interface RawNode {
   type: string
   kind: 'step' | 'entry'
   configXml?: string
+  filterTrueTarget?: string
+  filterFalseTarget?: string
   x?: number
   y?: number
   draw?: boolean
@@ -105,6 +107,10 @@ function serializeNodeConfig(stepElement: Element): string | undefined {
   return `<configuration>\n${parts.join('\n')}\n</configuration>`
 }
 
+function isFilterRowsType(type: string): boolean {
+  return type.replace(/[^a-z0-9]/gi, '').toLowerCase() === 'filterrows'
+}
+
 function readNodes(stepElements: HTMLCollectionOf<Element>, kind: 'step' | 'entry'): RawNode[] {
   const nodes: RawNode[] = []
   for (let i = 0; i < stepElements.length; i += 1) {
@@ -112,11 +118,14 @@ function readNodes(stepElements: HTMLCollectionOf<Element>, kind: 'step' | 'entr
     const name = textOf(el, 'name') ?? ''
     const type = textOf(el, 'type') ?? ''
     const gui = child(el, 'GUI')
+    const isFilterRows = kind === 'step' && isFilterRowsType(type)
     nodes.push({
       name,
       type,
       kind,
       configXml: serializeNodeConfig(el),
+      filterTrueTarget: isFilterRows ? textOf(el, 'send_true_to') : undefined,
+      filterFalseTarget: isFilterRows ? textOf(el, 'send_false_to') : undefined,
       x: parseNumber(textOf(gui, 'xloc')),
       y: parseNumber(textOf(gui, 'yloc')),
       draw: textOf(gui, 'draw') === undefined ? undefined : parseBool(textOf(gui, 'draw')),
@@ -338,6 +347,17 @@ export function parseKettleFile(xml: string, fileName?: string): KettleGraph {
   const rawNodes = readNodes(root.getElementsByTagName(kind === 'transformation' ? 'step' : 'entry'), kind === 'transformation' ? 'step' : 'entry')
   const nodes = disambiguate(rawNodes)
 
+  const filterRoutesByNodeId = new Map<string, { trueTarget?: string; falseTarget?: string }>()
+  for (let i = 0; i < rawNodes.length; i += 1) {
+    const rawNode = rawNodes[i]
+    const node = nodes[i]
+    if (!node || !isFilterRowsType(rawNode.type)) continue
+    filterRoutesByNodeId.set(node.id, {
+      trueTarget: rawNode.filterTrueTarget,
+      falseTarget: rawNode.filterFalseTarget,
+    })
+  }
+
   const idsByName = new Map<string, string[]>()
   for (const n of nodes) {
     const list = idsByName.get(n.name) ?? []
@@ -368,6 +388,12 @@ export function parseKettleFile(xml: string, fileName?: string): KettleGraph {
 
     const fromId = fromList[Math.min(fromIndex, fromList.length - 1)]
     const toId = toList[Math.min(toIndex, toList.length - 1)]
+    const filterRoutes = filterRoutesByNodeId.get(fromId)
+    const filterResult = filterRoutes?.trueTarget === to
+      ? 'true'
+      : filterRoutes?.falseTarget === to
+        ? 'false'
+        : undefined
     const pair = `${from}\u0000${to}`
     const hopError = parseXmlBool(hop, 'error') === true
     const exactErrorMatch = `${pair}\u0000${fromIndex}\u0000${toIndex}`
@@ -388,6 +414,7 @@ export function parseKettleFile(xml: string, fileName?: string): KettleGraph {
       from: fromId,
       to: toId,
       enabled,
+      filterResult,
       evaluation: parseXmlBool(hop, 'evaluation'),
       unconditional: parseXmlBool(hop, 'unconditional'),
       errorHandler: isInStepErrorHandling,
