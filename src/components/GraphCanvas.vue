@@ -685,7 +685,7 @@ watch(selectedNode, () => {
 :deep(.vue-flow__edge.error-handler-edge .vue-flow__edge-interaction),
 :deep(.vue-flow__edge.error-handler-edge .vue-flow__connection-path) {
   stroke: #b91c1c !important;
-  stroke-width: 2.8px !important;
+  stroke-width: 2px !important;
 }
 
 :deep(.vue-flow__node-note) {

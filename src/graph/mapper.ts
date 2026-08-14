@@ -35,7 +35,7 @@ const DISABLED_EDGE_STYLE = {
 
 const ERROR_HANDLER_EDGE_STYLE = {
   stroke: '#b91c1c',
-  strokeWidth: 2.4,
+  strokeWidth: 2,
 }
 
 const FILTER_RESULT_LABEL_STYLE = {
@@ -127,8 +127,8 @@ export function toVueFlow(graph: KettleGraph): { nodes: Node<FlowNodeData>[]; ed
       markerEnd: {
         type: MarkerType.ArrowClosed,
         color: markerColor,
-        width: 18,
-        height: 18,
+        width: e.errorHandler ? 14 : 18,
+        height: e.errorHandler ? 14 : 18,
       },
       ...(Object.keys(style).length === 0 ? {} : { style }),
       ...(e.filterResult && filterLabelStyle
