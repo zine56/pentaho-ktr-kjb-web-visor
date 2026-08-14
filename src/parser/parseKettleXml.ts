@@ -125,6 +125,136 @@ function readNodes(stepElements: HTMLCollectionOf<Element>, kind: 'step' | 'entr
   return nodes
 }
 
+function textOfAny(el: Element | null, tags: string[]): string | undefined {
+  if (!el) return undefined
+  const targetTags = tags.map((t) => t.toLowerCase())
+  for (let i = 0; i < el.children.length; i += 1) {
+    const child = el.children[i]
+    const local = (child.localName ?? child.nodeName).toLowerCase()
+    if (targetTags.includes(local)) {
+      const value = child.textContent?.trim()
+      if (value) return value
+    }
+  }
+  return undefined
+}
+
+function booleanFromErrorHandling(el: Element | null): boolean | undefined {
+  if (!el) return undefined
+  const enabled = textOfAny(el, ['enabled', 'active', 'use'])
+  if (enabled !== undefined) return parseBool(enabled)
+  const enabledAttr = el.getAttribute('enabled') ?? el.getAttribute('active') ?? el.getAttribute('use')
+  if (enabledAttr === null || enabledAttr === '') return undefined
+  return parseBool(enabledAttr)
+}
+
+function parseStepErrorHandlingFromName(el: Element): { source?: string; target?: string } {
+  const source =
+    textOfAny(el, ['from_step', 'from', 'source_step', 'source', 'source_step_name', 'step_from'])
+    ?? el.getAttribute('from')
+    ?? el.getAttribute('source')
+    ?? el.getAttribute('source_step')
+
+  const target =
+    textOfAny(el, ['to_step', 'to', 'target_step', 'target', 'target_step_name', 'step_to'])
+    ?? el.getAttribute('to')
+    ?? el.getAttribute('target')
+    ?? el.getAttribute('target_step')
+
+  return { source, target }
+}
+
+type ErrorHandlerReference = {
+  source: string
+  target: string
+  sourceIndex?: number
+  targetIndex?: number
+}
+
+function parseErrorHopReferences(root: Element): ErrorHandlerReference[] {
+  const rawErrorHops = root.getElementsByTagName('step_error_handling')
+  const refs: ErrorHandlerReference[] = []
+  for (let i = 0; i < rawErrorHops.length; i += 1) {
+    const el = rawErrorHops[i]
+    const { source, target } = parseStepErrorHandlingFromName(el)
+    if (!source || !target) continue
+
+    const enabled = booleanFromErrorHandling(el)
+    if (enabled === false) continue
+
+    const sourceIndex = parseNumber(textOfAny(el, ['from_idx', 'source_idx', 'source_index', 'from_index', 'from_nr']))
+    const targetIndex = parseNumber(textOfAny(el, ['to_idx', 'target_idx', 'target_index', 'to_index', 'to_nr']))
+
+    refs.push({
+      source,
+      target,
+      sourceIndex,
+      targetIndex,
+    })
+  }
+
+  return refs
+}
+
+function addIndexVariants(values: Set<number>, index: number): void {
+  values.add(index)
+  values.add(index - 1)
+}
+
+function buildErrorHandlerRefSet(
+  refs: ErrorHandlerReference[],
+): {
+  pairs: Set<string>
+  pairsWithExactIndexes: Set<string>
+  byPairWithSourceIndex: Map<string, Set<number>>
+  byPairWithTargetIndex: Map<string, Set<number>>
+  byPairWithBothIndexes: Set<string>
+} {
+  const pairs = new Set<string>()
+  const pairsWithExactIndexes = new Set<string>()
+  const byPairWithSourceIndex = new Map<string, Set<number>>()
+  const byPairWithTargetIndex = new Map<string, Set<number>>()
+  const byPairWithBothIndexes = new Set<string>()
+
+  for (const ref of refs) {
+    const pair = `${ref.source}\u0000${ref.target}`
+    pairs.add(pair)
+
+    if (ref.sourceIndex !== undefined) {
+      const values = byPairWithSourceIndex.get(pair) ?? new Set<number>()
+      addIndexVariants(values, ref.sourceIndex)
+      byPairWithSourceIndex.set(pair, values)
+    }
+
+    if (ref.targetIndex !== undefined) {
+      const values = byPairWithTargetIndex.get(pair) ?? new Set<number>()
+      addIndexVariants(values, ref.targetIndex)
+      byPairWithTargetIndex.set(pair, values)
+    }
+
+    if (ref.sourceIndex !== undefined && ref.targetIndex !== undefined) {
+      const exactPair = `${pair}\u0000${ref.sourceIndex}\u0000${ref.targetIndex}`
+      const exactPairAlternative = `${pair}\u0000${ref.sourceIndex - 1}\u0000${ref.targetIndex - 1}`
+      const exactPairSource = `${pair}\u0000${ref.sourceIndex}\u0000${ref.targetIndex - 1}`
+      const exactPairTarget = `${pair}\u0000${ref.sourceIndex - 1}\u0000${ref.targetIndex}`
+
+      byPairWithBothIndexes.add(exactPair)
+      byPairWithBothIndexes.add(exactPairAlternative)
+      byPairWithBothIndexes.add(exactPairSource)
+      byPairWithBothIndexes.add(exactPairTarget)
+      pairsWithExactIndexes.add(pair)
+    }
+  }
+
+  return {
+    pairs,
+    pairsWithExactIndexes,
+    byPairWithSourceIndex,
+    byPairWithTargetIndex,
+    byPairWithBothIndexes,
+  }
+}
+
 function disambiguate(raw: RawNode[]): KettleNode[] {
   const seen = new Map<string, number>()
   return raw.map((n, index) => {
@@ -161,6 +291,7 @@ export function parseKettleFile(xml: string, fileName?: string): KettleGraph {
   }
 
   const edges: KettleEdge[] = []
+  const errorReferences = buildErrorHandlerRefSet(parseErrorHopReferences(root))
   const hops = root.getElementsByTagName('hop')
   const fromIdx = new Map<string, number>()
   const toIdx = new Map<string, number>()
@@ -182,6 +313,20 @@ export function parseKettleFile(xml: string, fileName?: string): KettleGraph {
 
     const fromId = fromList[Math.min(fromIndex, fromList.length - 1)]
     const toId = toList[Math.min(toIndex, toList.length - 1)]
+    const pair = `${from}\u0000${to}`
+    const hopError = parseXmlBool(hop, 'error') === true
+    const exactErrorMatch = `${pair}\u0000${fromIndex}\u0000${toIndex}`
+    const bothIndexMatch = errorReferences.byPairWithBothIndexes.has(exactErrorMatch)
+    const sourceIndexes = errorReferences.byPairWithSourceIndex.get(pair)
+    const targetIndexes = errorReferences.byPairWithTargetIndex.get(pair)
+    const constrainedBySourceOrTargetIndexes = sourceIndexes !== undefined || targetIndexes !== undefined
+    const exactConstraint = errorReferences.pairsWithExactIndexes.has(pair)
+    const isInStepErrorHandling = hopError || (() => {
+      if (!errorReferences.pairs.has(pair)) return false
+      if (exactConstraint) return bothIndexMatch
+      if (!constrainedBySourceOrTargetIndexes) return true
+      return (sourceIndexes ? sourceIndexes.has(fromIndex) : true) && (targetIndexes ? targetIndexes.has(toIndex) : true)
+    })()
 
     edges.push({
       id: `e${i}`,
@@ -190,7 +335,7 @@ export function parseKettleFile(xml: string, fileName?: string): KettleGraph {
       enabled,
       evaluation: parseXmlBool(hop, 'evaluation'),
       unconditional: parseXmlBool(hop, 'unconditional'),
-      errorHandler: parseXmlBool(hop, 'error'),
+      errorHandler: isInStepErrorHandling,
     })
   }
 
