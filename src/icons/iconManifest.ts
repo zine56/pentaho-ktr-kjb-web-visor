@@ -12,10 +12,6 @@ function normalizeType(value: string): string {
   return value.trim().toLowerCase().replace(/[^a-z0-9]/g, '')
 }
 
-const NORMALIZED_ICON_MAP: Record<string, string> = Object.fromEntries(
-  Object.entries(ICON_MAP).map(([type, file]) => [normalizeType(type), file]),
-)
-
 export const ICON_MAP: Record<string, string> = {
   // Transformation steps
   TableInput: 'TIP.png',
@@ -98,6 +94,10 @@ export const ICON_MAP: Record<string, string> = {
   DTD_VALIDATOR: 'DTD.svg',
   XML_WELL_FORMED: 'XFC.svg',
 }
+
+const NORMALIZED_ICON_MAP: Record<string, string> = Object.fromEntries(
+  Object.entries(ICON_MAP).map(([type, file]) => [normalizeType(type), file]),
+)
 
 export function resolveIconFile(type: string, kind: 'step' | 'entry'): string {
   if (kind === 'entry' && type === 'SPECIAL') return FALLBACK_SPECIAL
