@@ -1,4 +1,4 @@
-import type { KettleEdge, KettleGraph, KettleKind, KettleNode } from '../model/graph'
+import type { KettleEdge, KettleGraph, KettleKind, KettleNode, KettleNote } from '../model/graph'
 
 export class KettleParseError extends Error {
   constructor(message: string) {
@@ -137,6 +137,52 @@ function textOfAny(el: Element | null, tags: string[]): string | undefined {
     }
   }
   return undefined
+}
+
+function parseRgbColor(el: Element, prefix: 'fontcolor' | 'backgroundcolor' | 'bordercolor'): string | undefined {
+  const red = parseNumber(textOfAny(el, [`${prefix}red`]))
+  const green = parseNumber(textOfAny(el, [`${prefix}green`]))
+  const blue = parseNumber(textOfAny(el, [`${prefix}blue`]))
+  if (red === undefined || green === undefined || blue === undefined) return undefined
+
+  const channel = (value: number) => Math.min(255, Math.max(0, Math.round(value)))
+  return `rgb(${channel(red)}, ${channel(green)}, ${channel(blue)})`
+}
+
+function readNotes(root: Element): KettleNote[] {
+  const container = child(root, 'notepads')
+  if (!container) return []
+
+  const notes: KettleNote[] = []
+  for (let i = 0; i < container.children.length; i += 1) {
+    const el = container.children[i]
+    if ((el.localName ?? el.nodeName).toLowerCase() !== 'notepad') continue
+
+    const width = parseNumber(textOf(el, 'width'))
+    const height = parseNumber(textOfAny(el, ['heigth', 'height']))
+    const fontBold = textOf(el, 'fontbold')
+    const fontItalic = textOf(el, 'fontitalic')
+    const drawShadow = textOf(el, 'drawshadow')
+
+    notes.push({
+      id: `__kettle-note-${String(notes.length + 1).padStart(4, '0')}`,
+      text: textOf(el, 'note') ?? '',
+      x: parseNumber(textOf(el, 'xloc')) ?? 0,
+      y: parseNumber(textOf(el, 'yloc')) ?? 0,
+      width: width !== undefined && width > 0 ? width : 180,
+      height: height !== undefined && height > 0 ? height : 80,
+      fontName: textOf(el, 'fontname'),
+      fontSize: parseNumber(textOf(el, 'fontsize')),
+      fontBold: fontBold === undefined ? undefined : parseBool(fontBold),
+      fontItalic: fontItalic === undefined ? undefined : parseBool(fontItalic),
+      fontColor: parseRgbColor(el, 'fontcolor'),
+      backgroundColor: parseRgbColor(el, 'backgroundcolor'),
+      borderColor: parseRgbColor(el, 'bordercolor'),
+      drawShadow: drawShadow === undefined ? undefined : parseBool(drawShadow),
+    })
+  }
+
+  return notes
 }
 
 function booleanFromErrorHandling(el: Element | null): boolean | undefined {
@@ -357,5 +403,6 @@ export function parseKettleFile(xml: string, fileName?: string): KettleGraph {
     name: name ?? fileName?.split('/').pop()?.replace(/\.[^.]+$/, '') ?? 'Untitled',
     nodes,
     edges,
+    notes: readNotes(root),
   }
 }

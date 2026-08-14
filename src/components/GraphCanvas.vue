@@ -6,7 +6,8 @@ import { Controls } from '@vue-flow/controls'
 import { MiniMap } from '@vue-flow/minimap'
 import type { KettleGraph } from '../model/graph'
 import { toVueFlow } from '../graph/mapper'
-import type { StepNodeData } from '../graph/mapper'
+import type { FlowNodeData, StepNodeData } from '../graph/mapper'
+import NoteNode from './NoteNode.vue'
 import StepNode from './StepNode.vue'
 
 const props = defineProps<{
@@ -21,7 +22,8 @@ const model = computed(() => {
   const highlightedSet = new Set((props.highlightedNodeIds ?? []).map((id) => id.trim()))
 
   const nodes = baseModel.nodes.map((node) => {
-    const data = node.data as StepNodeData
+    const data = node.data as FlowNodeData
+    if (data.kind === 'note') return node
     return {
       ...node,
       data: {
@@ -42,11 +44,12 @@ function onNodeClick(payload: {
   event?: MouseEvent
   node?: {
     id: string
-    data: StepNodeData
+    data: FlowNodeData
   }
 }) {
   if (payload.event && payload.event.button !== 0) return
   if (!payload.node) return
+  if (payload.node.data.kind === 'note') return
   selectedNode.value = {
     id: payload.node.id,
     ...payload.node.data,
@@ -195,6 +198,9 @@ watch(selectedNode, () => {
 
     <template #node-step="nodeProps">
       <StepNode :data="nodeProps.data" />
+    </template>
+    <template #node-note="nodeProps">
+      <NoteNode :data="nodeProps.data" />
     </template>
   </VueFlow>
 
@@ -520,6 +526,14 @@ watch(selectedNode, () => {
 :deep(.vue-flow__edge.error-handler-edge .vue-flow__connection-path) {
   stroke: #b91c1c !important;
   stroke-width: 2.8px !important;
+}
+
+:deep(.vue-flow__node-note) {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+  pointer-events: none;
 }
 
 </style>

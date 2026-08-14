@@ -34,9 +34,28 @@ export interface KettleEdge {
   errorHandler?: boolean
 }
 
+export interface KettleNote {
+  /** Stable identifier derived from the note order in the source file. */
+  id: string
+  text: string
+  x: number
+  y: number
+  width: number
+  height: number
+  fontName?: string
+  fontSize?: number
+  fontBold?: boolean
+  fontItalic?: boolean
+  fontColor?: string
+  backgroundColor?: string
+  borderColor?: string
+  drawShadow?: boolean
+}
+
 export interface KettleGraph {
   kind: KettleKind
   name: string
   nodes: KettleNode[]
   edges: KettleEdge[]
+  notes: KettleNote[]
 }

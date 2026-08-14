@@ -8,6 +8,7 @@ function makeGraph(partial: Partial<KettleGraph>): KettleGraph {
     name: 't',
     nodes: [],
     edges: [],
+    notes: [],
     ...partial,
   }
 }
@@ -78,6 +79,38 @@ describe('toVueFlow', () => {
     expect(edges[0].style).toMatchObject({
       stroke: '#b91c1c',
       strokeWidth: 2.4,
+    })
+  })
+
+  it('maps notes as positioned, non-interactive flow elements', () => {
+    const graph = makeGraph({
+      notes: [{
+        id: '__kettle-note-0001',
+        text: 'Remember this',
+        x: 45,
+        y: 70,
+        width: 210,
+        height: 90,
+        backgroundColor: 'rgb(255, 250, 180)',
+      }],
+    })
+
+    const { nodes } = toVueFlow(graph)
+    const note = nodes.find((node) => node.type === 'note')
+
+    expect(note).toMatchObject({
+      id: '__kettle-note-0001',
+      position: { x: 45, y: 70 },
+      draggable: false,
+      selectable: false,
+      connectable: false,
+      zIndex: -1,
+      style: { width: '210px', height: '90px' },
+      data: {
+        kind: 'note',
+        text: 'Remember this',
+        backgroundColor: 'rgb(255, 250, 180)',
+      },
     })
   })
 })

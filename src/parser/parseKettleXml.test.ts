@@ -47,6 +47,43 @@ describe('parseKettleXml', () => {
     expect(g.nodes[0].y).toBeUndefined()
   })
 
+  it('parses positioned notes and their visual settings from transformations and jobs', () => {
+    const notepads = `<notepads><notepad>
+      <note>First line&#10;Second line</note>
+      <xloc>75</xloc><yloc>110</yloc><width>240</width><heigth>95</heigth>
+      <fontname>Verdana</fontname><fontsize>11</fontsize><fontbold>Y</fontbold><fontitalic>N</fontitalic>
+      <fontcolorred>10</fontcolorred><fontcolorgreen>20</fontcolorgreen><fontcolorblue>30</fontcolorblue>
+      <backgroundcolorred>250</backgroundcolorred><backgroundcolorgreen>240</backgroundcolorgreen><backgroundcolorblue>180</backgroundcolorblue>
+      <bordercolorred>80</bordercolorred><bordercolorgreen>70</bordercolorgreen><bordercolorblue>60</bordercolorblue>
+      <drawshadow>Y</drawshadow>
+    </notepad></notepads>`
+
+    const graphs = [
+      parseKettleFile(`<transformation>${notepads}</transformation>`, 'notes.ktr'),
+      parseKettleFile(`<job><name>notes</name>${notepads}</job>`, 'notes.kjb'),
+    ]
+
+    for (const g of graphs) {
+      expect(g.notes).toHaveLength(1)
+      expect(g.notes[0]).toMatchObject({
+        id: '__kettle-note-0001',
+        text: 'First line\nSecond line',
+        x: 75,
+        y: 110,
+        width: 240,
+        height: 95,
+        fontName: 'Verdana',
+        fontSize: 11,
+        fontBold: true,
+        fontItalic: false,
+        fontColor: 'rgb(10, 20, 30)',
+        backgroundColor: 'rgb(250, 240, 180)',
+        borderColor: 'rgb(80, 70, 60)',
+        drawShadow: true,
+      })
+    }
+  })
+
   it('disambiguates duplicate step names and resolves hops by occurrence order', () => {
     const xml = `<transformation>
       <step><name>Calc</name><type>Calculator</type></step>
