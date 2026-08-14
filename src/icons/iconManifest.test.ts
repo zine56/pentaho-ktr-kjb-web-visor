@@ -9,6 +9,7 @@ describe('iconManifest', () => {
     expect(resolveIconFile('Dummy', 'step')).toBe('DUM.svg')
     expect(resolveIconFile('ModifiedJavaScriptValue', 'step')).toBe('ModifiedJavaScriptValue.png')
     expect(resolveIconFile('Modified JavaScript Value', 'step')).toBe('ModifiedJavaScriptValue.png')
+    expect(resolveIconFile('modified-javascript-value', 'step')).toBe('ModifiedJavaScriptValue.png')
   })
 
   it('maps known job entry types to Pentaho icons', () => {
