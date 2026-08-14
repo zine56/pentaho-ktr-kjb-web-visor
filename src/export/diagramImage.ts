@@ -43,6 +43,30 @@ function downloadDataUrl(dataUrl: string, filename: string) {
   link.remove()
 }
 
+function inlineEdgeStyles(pane: HTMLElement): () => void {
+  const edges = Array.from(pane.querySelectorAll<SVGPathElement>('.vue-flow__edge-path'))
+  const originalStyles = edges.map((edge) => edge.getAttribute('style'))
+
+  edges.forEach((edge) => {
+    const computed = window.getComputedStyle(edge)
+    edge.style.stroke = computed.stroke
+    edge.style.strokeWidth = computed.strokeWidth
+    edge.style.fill = computed.fill
+    edge.style.opacity = computed.opacity
+  })
+
+  return () => {
+    edges.forEach((edge, index) => {
+      const originalStyle = originalStyles[index]
+      if (originalStyle === null) {
+        edge.removeAttribute('style')
+      } else {
+        edge.setAttribute('style', originalStyle)
+      }
+    })
+  }
+}
+
 export async function exportDiagramImage(options: {
   pane: HTMLElement
   nodes: GraphNode[]
@@ -77,9 +101,15 @@ export async function exportDiagramImage(options: {
     },
   }
 
-  const dataUrl = options.format === 'png'
-    ? await toPng(options.pane, { ...renderOptions, pixelRatio: 2 })
-    : await toSvg(options.pane, renderOptions)
+  const restoreEdgeStyles = inlineEdgeStyles(options.pane)
+  let dataUrl: string
+  try {
+    dataUrl = options.format === 'png'
+      ? await toPng(options.pane, { ...renderOptions, pixelRatio: 2 })
+      : await toSvg(options.pane, renderOptions)
+  } finally {
+    restoreEdgeStyles()
+  }
 
   downloadDataUrl(dataUrl, filename)
   return filename
