@@ -3,9 +3,12 @@ import type { KettleGraph, KettleNode } from '../model/graph'
 import { computePositions } from './layout'
 
 export interface StepNodeData extends Record<string, unknown> {
+  uid: string
   name: string
   type: string
   kind: KettleNode['kind']
+  configXml?: string
+  highlighted?: boolean
 }
 
 const DISABLED_EDGE_STYLE = {
@@ -13,14 +16,20 @@ const DISABLED_EDGE_STYLE = {
   strokeDasharray: '6 4',
 }
 
-export function toVueFlow(graph: KettleGraph): { nodes: Node[]; edges: Edge[] } {
+export function toVueFlow(graph: KettleGraph): { nodes: Node<StepNodeData>[]; edges: Edge[] } {
   const positions = computePositions(graph)
 
-  const nodes: Node[] = graph.nodes.map((n) => ({
+  const nodes: Node<StepNodeData>[] = graph.nodes.map((n) => ({
     id: n.id,
     type: 'step',
     position: positions[n.id] ?? { x: 0, y: 0 },
-    data: { name: n.name, type: n.type, kind: n.kind } satisfies StepNodeData,
+    data: {
+      uid: n.uid,
+      name: n.name,
+      type: n.type,
+      kind: n.kind,
+      configXml: n.configXml,
+    } satisfies StepNodeData,
   }))
 
   const edges: Edge[] = graph.edges.map((e) => ({

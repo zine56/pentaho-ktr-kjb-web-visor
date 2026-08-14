@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<job>
+  <name>Sample basic job</name>
+  <description/>
+  <entries>
+    <entry>
+      <name>START</name>
+      <type>SPECIAL</type>
+      <description/>
+      <GUI>
+        <xloc>100</xloc>
+        <yloc>100</yloc>
+        <draw>Y</draw>
+      </GUI>
+    </entry>
+    <entry>
+      <name>Run transform</name>
+      <type>TRANS</type>
+      <description/>
+      <GUI>
+        <xloc>340</xloc>
+        <yloc>100</yloc>
+        <draw>Y</draw>
+      </GUI>
+    </entry>
+  </entries>
+  <hops>
+    <hop>
+      <from>START</from>
+      <to>Run transform</to>
+      <enabled>Y</enabled>
+      <evaluation>Y</evaluation>
+      <unconditional>Y</unconditional>
+    </hop>
+  </hops>
+</job>

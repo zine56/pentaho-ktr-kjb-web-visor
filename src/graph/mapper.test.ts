@@ -16,8 +16,8 @@ describe('toVueFlow', () => {
   it('preserves stored Spoon positions when every node has x/y', () => {
     const graph = makeGraph({
       nodes: [
-        { id: 'a', name: 'A', type: 'Dummy', kind: 'step', x: 120, y: 90 },
-        { id: 'b', name: 'B', type: 'Dummy', kind: 'step', x: 400, y: 90 },
+        { uid: 'n-0001', id: 'a', name: 'A', type: 'Dummy', kind: 'step', x: 120, y: 90 },
+        { uid: 'n-0002', id: 'b', name: 'B', type: 'Dummy', kind: 'step', x: 400, y: 90 },
       ],
       edges: [{ id: 'e0', from: 'a', to: 'b', enabled: true }],
     })
@@ -33,8 +33,8 @@ describe('toVueFlow', () => {
   it('auto-layouts with dagre when positions are missing', () => {
     const graph = makeGraph({
       nodes: [
-        { id: 'a', name: 'A', type: 'Dummy', kind: 'step' },
-        { id: 'b', name: 'B', type: 'Dummy', kind: 'step' },
+        { uid: 'n-0001', id: 'a', name: 'A', type: 'Dummy', kind: 'step' },
+        { uid: 'n-0002', id: 'b', name: 'B', type: 'Dummy', kind: 'step' },
       ],
       edges: [{ id: 'e0', from: 'a', to: 'b', enabled: true }],
     })
@@ -51,8 +51,8 @@ describe('toVueFlow', () => {
   it('styles disabled hops distinctly', () => {
     const graph = makeGraph({
       nodes: [
-        { id: 'a', name: 'A', type: 'Dummy', kind: 'step' },
-        { id: 'b', name: 'B', type: 'Dummy', kind: 'step' },
+        { uid: 'n-0001', id: 'a', name: 'A', type: 'Dummy', kind: 'step' },
+        { uid: 'n-0002', id: 'b', name: 'B', type: 'Dummy', kind: 'step' },
       ],
       edges: [
         { id: 'on', from: 'a', to: 'b', enabled: true },

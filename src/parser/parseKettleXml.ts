@@ -62,6 +62,7 @@ interface RawNode {
   name: string
   type: string
   kind: 'step' | 'entry'
+  configXml?: string
   x?: number
   y?: number
   draw?: boolean
@@ -71,6 +72,23 @@ function parseNumber(value: string | undefined): number | undefined {
   if (value === undefined || value.trim() === '') return undefined
   const n = Number(value)
   return Number.isFinite(n) ? n : undefined
+}
+
+function serializeNodeConfig(stepElement: Element): string | undefined {
+  const parts: string[] = []
+  const serializer = new XMLSerializer()
+
+  for (let i = 0; i < stepElement.children.length; i += 1) {
+    const childNode = stepElement.children[i]
+    const tag = childNode.localName ?? childNode.nodeName
+    if (tag === 'name' || tag === 'type' || tag === 'GUI') {
+      continue
+    }
+    parts.push(serializer.serializeToString(childNode))
+  }
+
+  if (parts.length === 0) return undefined
+  return `<configuration>\n${parts.join('\n')}\n</configuration>`
 }
 
 function readNodes(stepElements: HTMLCollectionOf<Element>, kind: 'step' | 'entry'): RawNode[] {
@@ -84,6 +102,7 @@ function readNodes(stepElements: HTMLCollectionOf<Element>, kind: 'step' | 'entr
       name,
       type,
       kind,
+      configXml: serializeNodeConfig(el),
       x: parseNumber(textOf(gui, 'xloc')),
       y: parseNumber(textOf(gui, 'yloc')),
       draw: textOf(gui, 'draw') === undefined ? undefined : parseBool(textOf(gui, 'draw')),
@@ -94,11 +113,21 @@ function readNodes(stepElements: HTMLCollectionOf<Element>, kind: 'step' | 'entr
 
 function disambiguate(raw: RawNode[]): KettleNode[] {
   const seen = new Map<string, number>()
-  return raw.map((n) => {
+  return raw.map((n, index) => {
     const count = seen.get(n.name) ?? 0
     seen.set(n.name, count + 1)
     const id = count === 0 ? n.name : `${n.name} (${count + 1})`
-    return { id, name: n.name, type: n.type, kind: n.kind, x: n.x, y: n.y, draw: n.draw }
+    return {
+      uid: `n-${String(index + 1).padStart(4, '0')}`,
+      id,
+      name: n.name,
+      type: n.type,
+      kind: n.kind,
+      configXml: n.configXml,
+      x: n.x,
+      y: n.y,
+      draw: n.draw,
+    }
   })
 }
 

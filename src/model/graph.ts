@@ -5,10 +5,14 @@ export type NodeKind = 'step' | 'entry'
 export interface KettleNode {
   /** Unique id within the file; derived from name, disambiguated on duplicates. */
   id: string
+  /** Stable internal identifier for code-level references, independent of visible name/id display. */
+  uid: string
   name: string
   /** Step/entry type id, e.g. 'TableInput', 'SPECIAL', 'TRANS'. */
   type: string
   kind: NodeKind
+  /** Raw node configuration captured from the source XML. */
+  configXml?: string
   /** From <GUI><xloc>, when present. */
   x?: number
   /** From <GUI><yloc>, when present. */

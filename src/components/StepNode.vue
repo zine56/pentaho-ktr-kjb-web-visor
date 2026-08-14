@@ -8,7 +8,13 @@ const props = defineProps<{ data: StepNodeData }>()
 
 const icon = computed(() => resolveStepIcon({ type: props.data.type, kind: props.data.kind }))
 const isSpecial = computed(() => props.data.kind === 'entry' && props.data.type === 'SPECIAL')
+const isHighlighted = computed(() => props.data.highlighted ?? false)
 const maxLineChars = 16
+const tooltip = computed(() =>
+  isHighlighted.value
+    ? `${props.data.name} (uid: ${props.data.uid}) [deeplink match]`
+    : `${props.data.name} (uid: ${props.data.uid})`,
+)
 const displayName = computed(() => {
   const name = props.data.name ?? ''
   if (name.length <= maxLineChars) return name
@@ -44,7 +50,7 @@ const displayName = computed(() => {
 </script>
 
 <template>
-  <div class="step-node">
+  <div class="step-node" :title="tooltip" :data-node-uid="data.uid" :class="{ highlighted: isHighlighted }">
     <div class="step-node-card" :class="[`kind-${data.kind}`, { 'is-special': isSpecial }]">
       <Handle type="target" :position="Position.Left" />
       <img class="step-icon" :src="icon" :alt="data.type" />
@@ -60,6 +66,10 @@ const displayName = computed(() => {
   flex-direction: column;
   align-items: center;
   gap: 3px;
+}
+
+.step-node.highlighted {
+  filter: saturate(1.08);
 }
 
 .step-node-card {
@@ -87,6 +97,11 @@ const displayName = computed(() => {
 .step-node-card.is-special {
   border-color: #2b944f;
   background: #f2fbf4;
+}
+
+.step-node.highlighted .step-node-card {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25), 0 4px 14px rgba(37, 99, 235, 0.3);
 }
 .step-icon {
   width: 26px;
