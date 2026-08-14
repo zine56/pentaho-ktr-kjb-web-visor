@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
-import { useVueFlow, VueFlow } from '@vue-flow/core'
+import { Panel, useVueFlow, VueFlow } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
 import { Controls } from '@vue-flow/controls'
 import { MiniMap } from '@vue-flow/minimap'
 import type { KettleGraph } from '../model/graph'
 import { toVueFlow } from '../graph/mapper'
 import type { FlowNodeData, StepNodeData } from '../graph/mapper'
+import { exportDiagramImage, type DiagramImageFormat } from '../export/diagramImage'
 import NoteNode from './NoteNode.vue'
 import StepNode from './StepNode.vue'
 
@@ -15,7 +16,11 @@ const props = defineProps<{
   highlightedNodeIds?: string[]
 }>()
 
-const { setCenter, viewport } = useVueFlow()
+const vueFlow = useVueFlow()
+const { setCenter, viewport } = vueFlow
+const exportingFormat = ref<DiagramImageFormat | null>(null)
+const exportFeedback = ref('')
+const exportFailed = ref(false)
 
 function onMiniMapClick(payload: { event: MouseEvent; position: { x: number; y: number } }) {
   if (payload.event.button !== 0) return
@@ -23,6 +28,36 @@ function onMiniMapClick(payload: { event: MouseEvent; position: { x: number; y: 
     zoom: viewport.value.zoom,
     duration: 280,
   })
+}
+
+async function exportDiagram(format: DiagramImageFormat) {
+  if (exportingFormat.value) return
+
+  const pane = vueFlow.viewportRef.value?.querySelector<HTMLElement>('.vue-flow__transformationpane')
+  if (!pane || !props.graph) {
+    exportFailed.value = true
+    exportFeedback.value = 'El diagrama aun no esta listo para exportar.'
+    return
+  }
+
+  exportingFormat.value = format
+  exportFeedback.value = ''
+  exportFailed.value = false
+
+  try {
+    const filename = await exportDiagramImage({
+      pane,
+      nodes: vueFlow.nodes.value,
+      name: props.graph.name,
+      format,
+    })
+    exportFeedback.value = `${filename} descargado`
+  } catch (error) {
+    exportFailed.value = true
+    exportFeedback.value = error instanceof Error ? error.message : 'No se pudo exportar el diagrama.'
+  } finally {
+    exportingFormat.value = null
+  }
 }
 
 const model = computed(() => {
@@ -204,6 +239,33 @@ watch(selectedNode, () => {
   >
     <Background />
     <Controls />
+    <Panel position="top-right" class="export-panel nodrag nopan">
+      <span class="export-label">Exportar</span>
+      <button
+        class="export-button"
+        type="button"
+        :disabled="exportingFormat !== null"
+        @click.stop="exportDiagram('png')"
+      >
+        {{ exportingFormat === 'png' ? 'Generando...' : 'PNG' }}
+      </button>
+      <button
+        class="export-button"
+        type="button"
+        :disabled="exportingFormat !== null"
+        @click.stop="exportDiagram('svg')"
+      >
+        {{ exportingFormat === 'svg' ? 'Generando...' : 'SVG' }}
+      </button>
+      <span
+        v-if="exportFeedback"
+        class="export-feedback"
+        :class="{ 'is-error': exportFailed }"
+        role="status"
+      >
+        {{ exportFeedback }}
+      </span>
+    </Panel>
     <MiniMap
       :pannable="true"
       aria-label="Minimapa del flujo: haz clic para navegar"
@@ -319,6 +381,54 @@ watch(selectedNode, () => {
 .flow-canvas {
   width: 100%;
   height: 100%;
+}
+.export-panel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: min(520px, calc(100vw - 56px));
+  padding: 6px 8px;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid #bfdbfe;
+  border-radius: 9px;
+  box-shadow: 0 5px 14px rgba(15, 23, 42, 0.14);
+  backdrop-filter: blur(6px);
+}
+.export-label {
+  color: #334155;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.export-button {
+  border: 1px solid #1d4ed8;
+  border-radius: 6px;
+  padding: 5px 9px;
+  background: #2563eb;
+  color: #f8fafc;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.export-button:hover:not(:disabled) {
+  background: #1d4ed8;
+}
+.export-button:disabled {
+  border-color: #94a3b8;
+  background: #94a3b8;
+  cursor: wait;
+}
+.export-feedback {
+  overflow: hidden;
+  max-width: 210px;
+  color: #166534;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.export-feedback.is-error {
+  color: #b91c1c;
 }
 .empty-state {
   display: flex;
