@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { Panel, useVueFlow, VueFlow } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
-import { Controls } from '@vue-flow/controls'
+import { ControlButton, Controls } from '@vue-flow/controls'
 import { MiniMap } from '@vue-flow/minimap'
 import type { KettleGraph } from '../model/graph'
 import { toVueFlow } from '../graph/mapper'
@@ -17,7 +17,7 @@ const props = defineProps<{
 }>()
 
 const vueFlow = useVueFlow()
-const { setCenter, viewport } = vueFlow
+const { fitView, setCenter, setNodes, viewport } = vueFlow
 const exportingFormat = ref<DiagramImageFormat | null>(null)
 const exportFeedback = ref('')
 const exportFailed = ref(false)
@@ -84,6 +84,21 @@ const model = computed(() => {
 const selectedNode = ref<(StepNodeData & { id: string }) | null>(null)
 const activeTab = ref<'details' | 'config' | 'configRaw'>('config')
 const copyFeedback = ref('')
+
+async function resetDiagram() {
+  if (!props.graph) return
+
+  setNodes(
+    model.value.nodes.map((node) => ({
+      ...node,
+      position: { ...node.position },
+      selected: false,
+    })),
+  )
+
+  await nextTick()
+  await fitView({ padding: 0.12, duration: 320 })
+}
 
 function onNodeClick(payload: {
   event?: MouseEvent
@@ -238,7 +253,28 @@ watch(selectedNode, () => {
     @node-click="onNodeClick"
   >
     <Background />
-    <Controls />
+    <Controls>
+      <ControlButton
+        title="Restablecer posiciones y vista"
+        aria-label="Restablecer posiciones y vista"
+        @click="resetDiagram"
+      >
+        <svg
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M3 12a9 9 0 1 0 3-6.7" />
+          <path d="M3 3v5h5" />
+        </svg>
+      </ControlButton>
+    </Controls>
     <Panel position="top-right" class="export-panel nodrag nopan">
       <span class="export-label">Exportar</span>
       <button
