@@ -67,31 +67,76 @@ function setActiveTab(tab: 'details' | 'config' | 'configRaw') {
 
 const configText = computed(() => selectedNode.value?.configXml ?? '')
 
-const IMPORTANT_FIELDS = ['fieldname', 'connection', 'tablename', 'schema', 'table', 'sql', 'connection_name', 'limit', 'database', 'field']
-
-function escapeHtml(value: string) {
-  return value
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
+type ConfigField = {
+  key: string
+  value: string
+  depth: number
 }
 
-const highlightedConfigHtml = computed(() => {
+function toNodeText(node: Node): string {
+  const value = node.textContent ?? ''
+  return value
+    .trim()
+    .replaceAll('\n', ' ')
+    .replace(/\s+/g, ' ')
+}
+
+const configDisplayRows = computed<ConfigField[]>(() => {
   const text = configText.value
-  if (!text) return '(No hay configuración disponible)'
+  if (!text.trim()) return []
 
-  let html = escapeHtml(text)
-  for (const field of IMPORTANT_FIELDS) {
-    const tag = field.toLowerCase()
-    const blockPattern = new RegExp(`(&lt;${tag}&gt;)([\\s\\S]*?)(&lt;\\/${tag}&gt;)`, 'g')
-    html = html.replace(blockPattern, (_all, openTag, value, closeTag) => `${openTag}<span class="xml-field-value">${value}</span>${closeTag}`)
-    const openTagPattern = new RegExp(`(&lt;/?\\s*)(${tag})(\\s*[^&]*?&gt;)`, 'g')
-    html = html.replace(openTagPattern, (_all, start, name, rest) => `${start}<span class="xml-tag xml-tag-important">${name}</span>${rest}`)
+  const parser = new DOMParser()
+  const doc = parser.parseFromString(`<node-config>${text}</node-config>`, 'application/xml')
+  const parserError = doc.getElementsByTagName('parsererror')[0]
+  if (parserError) {
+    return [
+      {
+        key: 'Vista HTML no disponible',
+        value: text.trim(),
+        depth: 0,
+      },
+    ]
   }
-  html = html.replace(/(&lt;\/?)([A-Za-z0-9_:-]+)([^&]*?&gt;)/g, (_all, openTag, tagName, rest) =>
-    `${openTag}<span class="${IMPORTANT_FIELDS.includes(tagName.toLowerCase()) ? 'xml-tag xml-tag-important' : 'xml-tag'}">${tagName}</span>${rest}`)
 
-  return html
+  const rows: ConfigField[] = []
+  const root = doc.documentElement
+
+  const walk = (node: Element, depth = 0, pathPrefix = '') => {
+    const name = node.localName ?? node.nodeName
+    const label = pathPrefix ? `${pathPrefix} · ${name}` : name
+    const elementChildren = Array.from(node.children)
+    const textValue = toNodeText(node)
+    const attrValue = Array.from(node.attributes)
+      .map((a) => `${a.name}: ${a.value}`)
+      .join(', ')
+
+    if (elementChildren.length === 0) {
+      rows.push({
+        key: label,
+        value: textValue || attrValue || '(sin valor)',
+        depth,
+      })
+      return
+    }
+
+    if (attrValue) {
+      rows.push({
+        key: `${label} (atributos)`,
+        value: attrValue,
+        depth,
+      })
+    }
+
+    for (const child of elementChildren) {
+      walk(child as Element, depth + 1, label)
+    }
+  }
+
+  for (const node of Array.from(root.children)) {
+    walk(node as Element, 0, '')
+  }
+
+  return rows
 })
 
 async function copyConfig() {
@@ -215,7 +260,18 @@ watch(selectedNode, () => {
             </button>
             <span v-if="copyFeedback" class="node-config-copy-feedback">{{ copyFeedback }}</span>
           </div>
-          <pre><code><span v-if="configText" v-html="highlightedConfigHtml"></span><span v-else>No hay configuración disponible</span></code></pre>
+          <div v-if="configDisplayRows.length" class="config-form">
+            <div
+              v-for="(item, index) in configDisplayRows"
+              :key="`${item.key}-${item.depth}-${index}`"
+              class="config-form-row"
+              :style="{ paddingLeft: `${item.depth * 14}px` }"
+            >
+              <div class="config-form-key">{{ item.key }}</div>
+              <div class="config-form-value">{{ item.value }}</div>
+            </div>
+          </div>
+          <p v-else>No hay configuración disponible</p>
         </div>
       </section>
     </div>
@@ -349,16 +405,36 @@ watch(selectedNode, () => {
   white-space: pre-wrap;
 }
 
-.xml-tag {
-  color: #7dd3fc;
+.config-form {
+  display: grid;
+  gap: 8px;
+  max-height: min(56vh, 420px);
+  overflow: auto;
 }
 
-.xml-tag-important {
-  color: #a78bfa;
+.config-form-row {
+  display: grid;
+  gap: 4px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 7px 9px;
+  background: #f8fafc;
 }
 
-.xml-field-value {
-  color: #86efac;
+.config-form-key {
+  font-size: 11px;
+  color: #334155;
+  font-weight: 600;
+  word-break: break-word;
+}
+
+.config-form-value {
+  margin: 0;
+  color: #0f172a;
+  font-size: 12px;
+  line-height: 1.25;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .node-config-actions {
