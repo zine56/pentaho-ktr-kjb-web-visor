@@ -87,6 +87,22 @@ describe('parseKettleXml', () => {
     expect(g.edges[0].errorHandler).toBe(true)
   })
 
+  it('reads an error-handler hop from error attribute', () => {
+    const xml = `<job>
+      <name>err</name>
+      <entries>
+        <entry><name>START</name><type>SPECIAL</type></entry>
+        <entry><name>Fail</name><type>TRANS</type></entry>
+      </entries>
+      <hops>
+        <hop error=\"Y\"><from>START</from><to>Fail</to><enabled>Y</enabled></hop>
+      </hops>
+    </job>`
+
+    const g = parseKettleFile(xml, 'err.kjb')
+    expect(g.edges[0].errorHandler).toBe(true)
+  })
+
   it('throws KettleParseError on malformed XML', () => {
     expect(() => parseKettleFile('<transformation><step>', 't.ktr')).toThrow(KettleParseError)
   })

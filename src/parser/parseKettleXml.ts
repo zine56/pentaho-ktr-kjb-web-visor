@@ -29,6 +29,20 @@ function parseBool(value: string | undefined): boolean {
   return v === 'Y' || v === 'TRUE' || v === '1'
 }
 
+function parseXmlBool(el: Element | null, tag: string): boolean | undefined {
+  if (!el) return undefined
+  const node = child(el, tag)
+  const nodeValue = node?.textContent?.trim()
+  if (nodeValue) return parseBool(nodeValue)
+  if (node) {
+    const nodeAttr = node.getAttribute('value') ?? node.getAttribute('enabled') ?? node.getAttribute('error')
+    if (nodeAttr !== null && nodeAttr !== '') return parseBool(nodeAttr)
+  }
+  const attrValue = el.getAttribute?.(tag)
+  if (attrValue === null || attrValue === '') return undefined
+  return parseBool(attrValue)
+}
+
 function parseXml(xml: string): Document {
   const doc = new DOMParser().parseFromString(xml, 'application/xml')
   const parserError = doc.getElementsByTagName('parsererror')[0]
@@ -174,9 +188,9 @@ export function parseKettleFile(xml: string, fileName?: string): KettleGraph {
       from: fromId,
       to: toId,
       enabled,
-      evaluation: textOf(hop, 'evaluation') === undefined ? undefined : parseBool(textOf(hop, 'evaluation')),
-      unconditional: textOf(hop, 'unconditional') === undefined ? undefined : parseBool(textOf(hop, 'unconditional')),
-      errorHandler: textOf(hop, 'error') === undefined ? undefined : parseBool(textOf(hop, 'error')),
+      evaluation: parseXmlBool(hop, 'evaluation'),
+      unconditional: parseXmlBool(hop, 'unconditional'),
+      errorHandler: parseXmlBool(hop, 'error'),
     })
   }
 

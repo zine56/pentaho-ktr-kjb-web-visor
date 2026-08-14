@@ -39,17 +39,20 @@ export function toVueFlow(graph: KettleGraph): { nodes: Node<StepNodeData>[]; ed
 
   const edges: Edge[] = graph.edges.map((e) => {
     const style: Record<string, string | number> = {}
+    const edgeClass = new Set<string>()
     if (!e.enabled) {
       Object.assign(style, DISABLED_EDGE_STYLE)
     }
     if (e.errorHandler) {
       Object.assign(style, ERROR_HANDLER_EDGE_STYLE)
+      edgeClass.add('error-handler-edge')
     }
 
     return {
       id: e.id,
       source: e.from,
       target: e.to,
+      class: Array.from(edgeClass),
       ...(Object.keys(style).length === 0 ? {} : { style }),
     }
   })

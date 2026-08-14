@@ -402,4 +402,11 @@ watch(selectedNode, () => {
   white-space: nowrap;
 }
 
+:deep(.vue-flow__edge.error-handler-edge .vue-flow__edge-path),
+:deep(.vue-flow__edge.error-handler-edge .vue-flow__edge-interaction),
+:deep(.vue-flow__edge.error-handler-edge .vue-flow__connection-path) {
+  stroke: #b91c1c !important;
+  stroke-width: 2.8px !important;
+}
+
 </style>
