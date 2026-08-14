@@ -7,6 +7,7 @@ describe('iconManifest', () => {
     expect(resolveIconFile('SelectValues', 'step')).toBe('SEL.svg')
     expect(resolveIconFile('FilterRows', 'step')).toBe('FLT.svg')
     expect(resolveIconFile('Dummy', 'step')).toBe('DUM.svg')
+    expect(resolveIconFile('ScriptValueMod', 'step')).toBe('ModifiedJavaScriptValue.png')
     expect(resolveIconFile('ModifiedJavaScriptValue', 'step')).toBe('ModifiedJavaScriptValue.png')
     expect(resolveIconFile('Modified JavaScript Value', 'step')).toBe('ModifiedJavaScriptValue.png')
     expect(resolveIconFile('modified-javascript-value', 'step')).toBe('ModifiedJavaScriptValue.png')
