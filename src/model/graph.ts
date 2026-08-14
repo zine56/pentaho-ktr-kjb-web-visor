@@ -30,6 +30,8 @@ export interface KettleEdge {
   evaluation?: boolean
   /** Job hops only. */
   unconditional?: boolean
+  /** Job hops only. True when the hop is configured as an error handler. */
+  errorHandler?: boolean
 }
 
 export interface KettleGraph {

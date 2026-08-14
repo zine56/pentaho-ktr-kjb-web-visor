@@ -64,4 +64,20 @@ describe('toVueFlow', () => {
     expect(edges[0].style).toBeUndefined()
     expect(edges[1].style).toBeDefined()
   })
+
+  it('styles error-handler hops distinctly', () => {
+    const graph = makeGraph({
+      nodes: [
+        { uid: 'n-0001', id: 'a', name: 'A', type: 'Dummy', kind: 'step' },
+        { uid: 'n-0002', id: 'b', name: 'B', type: 'Dummy', kind: 'step' },
+      ],
+      edges: [{ id: 'err', from: 'a', to: 'b', enabled: true, errorHandler: true }],
+    })
+
+    const { edges } = toVueFlow(graph)
+    expect(edges[0].style).toMatchObject({
+      stroke: '#b91c1c',
+      strokeWidth: 2.4,
+    })
+  })
 })

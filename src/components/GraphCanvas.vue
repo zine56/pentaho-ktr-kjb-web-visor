@@ -35,7 +35,7 @@ const model = computed(() => {
 })
 
 const selectedNode = ref<(StepNodeData & { id: string }) | null>(null)
-const activeTab = ref<'details' | 'config'>('details')
+const activeTab = ref<'details' | 'config' | 'configRaw'>('config')
 const copyFeedback = ref('')
 
 function onNodeClick(payload: {
@@ -52,7 +52,7 @@ function onNodeClick(payload: {
     ...payload.node.data,
     highlighted: payload.node.data.highlighted ?? false,
   }
-  activeTab.value = 'details'
+  activeTab.value = 'config'
   copyFeedback.value = ''
 }
 
@@ -61,7 +61,7 @@ function closeNodeConfig() {
   copyFeedback.value = ''
 }
 
-function setActiveTab(tab: 'details' | 'config') {
+function setActiveTab(tab: 'details' | 'config' | 'configRaw') {
   activeTab.value = tab
 }
 
@@ -120,7 +120,7 @@ watch(selectedNode, () => {
   if (!selectedNode.value) {
     return
   }
-  activeTab.value = 'details'
+  activeTab.value = 'config'
   copyFeedback.value = ''
 })
 </script>
@@ -155,18 +155,26 @@ watch(selectedNode, () => {
         <button
           role="tab"
           class="node-config-tab"
-          :class="{ 'is-active': activeTab === 'details' }"
-          @click="setActiveTab('details')"
-        >
-          Detalles
-        </button>
-        <button
-          role="tab"
-          class="node-config-tab"
           :class="{ 'is-active': activeTab === 'config' }"
           @click="setActiveTab('config')"
         >
           Configuración
+        </button>
+        <button
+          role="tab"
+          class="node-config-tab"
+          :class="{ 'is-active': activeTab === 'configRaw' }"
+          @click="setActiveTab('configRaw')"
+        >
+          Configuración (XML)
+        </button>
+        <button
+          role="tab"
+          class="node-config-tab"
+          :class="{ 'is-active': activeTab === 'details' }"
+          @click="setActiveTab('details')"
+        >
+          Detalles
         </button>
       </div>
       <section class="node-config-body">
@@ -176,6 +184,22 @@ watch(selectedNode, () => {
           <p><strong>Nombre:</strong> {{ selectedNode.name }}</p>
           <p><strong>Tipo:</strong> {{ selectedNode.type }}</p>
           <p><strong>Clase:</strong> {{ selectedNode.kind }}</p>
+        </div>
+        <div v-else-if="activeTab === 'configRaw'" class="node-config-section">
+          <div class="node-config-actions">
+            <button
+              class="node-config-copy"
+              type="button"
+              :disabled="!configText"
+              @click="copyConfig"
+              :title="configText ? 'Copiar configuración del nodo' : 'No hay configuración para copiar'"
+            >
+              <span aria-hidden="true">📋</span>
+              <span>Copiar configuración</span>
+            </button>
+            <span v-if="copyFeedback" class="node-config-copy-feedback">{{ copyFeedback }}</span>
+          </div>
+          <pre><code>{{ configText || 'No hay configuración disponible' }}</code></pre>
         </div>
         <div v-else class="node-config-section">
           <div class="node-config-actions">

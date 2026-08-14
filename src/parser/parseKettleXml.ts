@@ -176,6 +176,7 @@ export function parseKettleFile(xml: string, fileName?: string): KettleGraph {
       enabled,
       evaluation: textOf(hop, 'evaluation') === undefined ? undefined : parseBool(textOf(hop, 'evaluation')),
       unconditional: textOf(hop, 'unconditional') === undefined ? undefined : parseBool(textOf(hop, 'unconditional')),
+      errorHandler: textOf(hop, 'error') === undefined ? undefined : parseBool(textOf(hop, 'error')),
     })
   }
 
