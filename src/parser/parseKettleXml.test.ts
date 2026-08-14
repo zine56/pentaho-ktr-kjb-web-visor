@@ -123,6 +123,36 @@ describe('parseKettleXml', () => {
     expect(g.edges[0].errorHandler).toBe(true)
   })
 
+  it('reads an error-handler hop from step_error_handling error entries', () => {
+    const xml = `<job>
+      <name>err</name>
+      <entries>
+        <entry><name>update oracle planes_alums</name><type>TRANS</type></entry>
+        <entry><name>api_raw</name><type>TRANS</type></entry>
+        <entry><name>agrega valores para api_raw</name><type>TRANS</type></entry>
+      </entries>
+      <step_error_handling>
+        <error>
+          <source_step>update oracle planes_alums</source_step>
+          <target_step>agrega valores para api_raw</target_step>
+          <is_enabled>Y</is_enabled>
+          <nr_valuename>error_num</nr_valuename>
+        </error>
+      </step_error_handling>
+      <hops>
+        <hop><from>update oracle planes_alums</from><to>agrega valores para api_raw</to><enabled>Y</enabled></hop>
+      </hops>
+    </job>`
+
+    const g = parseKettleFile(xml, 'err.kjb')
+    expect(g.edges).toHaveLength(1)
+    expect(g.edges[0]).toMatchObject({
+      from: 'update oracle planes_alums',
+      to: 'agrega valores para api_raw',
+      errorHandler: true,
+    })
+  })
+
   it('throws KettleParseError on malformed XML', () => {
     expect(() => parseKettleFile('<transformation><step>', 't.ktr')).toThrow(KettleParseError)
   })

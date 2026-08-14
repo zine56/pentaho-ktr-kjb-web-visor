@@ -141,7 +141,7 @@ function textOfAny(el: Element | null, tags: string[]): string | undefined {
 
 function booleanFromErrorHandling(el: Element | null): boolean | undefined {
   if (!el) return undefined
-  const enabled = textOfAny(el, ['enabled', 'active', 'use'])
+  const enabled = textOfAny(el, ['enabled', 'active', 'use', 'is_enabled'])
   if (enabled !== undefined) return parseBool(enabled)
   const enabledAttr = el.getAttribute('enabled') ?? el.getAttribute('active') ?? el.getAttribute('use')
   if (enabledAttr === null || enabledAttr === '') return undefined
@@ -176,21 +176,30 @@ function parseErrorHopReferences(root: Element): ErrorHandlerReference[] {
   const refs: ErrorHandlerReference[] = []
   for (let i = 0; i < rawErrorHops.length; i += 1) {
     const el = rawErrorHops[i]
-    const { source, target } = parseStepErrorHandlingFromName(el)
-    if (!source || !target) continue
+    const errorEntries = Array.from(el.getElementsByTagName('error'))
+    const effectiveEntries = errorEntries.length > 0 ? errorEntries : [el]
 
-    const enabled = booleanFromErrorHandling(el)
-    if (enabled === false) continue
+    for (const errorEntry of effectiveEntries) {
+      const { source, target } = parseStepErrorHandlingFromName(errorEntry)
+      if (!source || !target) continue
 
-    const sourceIndex = parseNumber(textOfAny(el, ['from_idx', 'source_idx', 'source_index', 'from_index', 'from_nr']))
-    const targetIndex = parseNumber(textOfAny(el, ['to_idx', 'target_idx', 'target_index', 'to_index', 'to_nr']))
+      const enabled = booleanFromErrorHandling(errorEntry)
+      if (enabled === false) continue
 
-    refs.push({
-      source,
-      target,
-      sourceIndex,
-      targetIndex,
-    })
+      const sourceIndex = parseNumber(
+        textOfAny(errorEntry, ['from_idx', 'source_idx', 'source_index', 'from_index', 'from_nr']),
+      )
+      const targetIndex = parseNumber(
+        textOfAny(errorEntry, ['to_idx', 'target_idx', 'target_index', 'to_index', 'to_nr']),
+      )
+
+      refs.push({
+        source,
+        target,
+        sourceIndex,
+        targetIndex,
+      })
+    }
   }
 
   return refs
