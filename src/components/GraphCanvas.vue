@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
-import { VueFlow } from '@vue-flow/core'
+import { useVueFlow, VueFlow } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
 import { Controls } from '@vue-flow/controls'
 import { MiniMap } from '@vue-flow/minimap'
@@ -14,6 +14,16 @@ const props = defineProps<{
   graph: KettleGraph | null
   highlightedNodeIds?: string[]
 }>()
+
+const { setCenter, viewport } = useVueFlow()
+
+function onMiniMapClick(payload: { event: MouseEvent; position: { x: number; y: number } }) {
+  if (payload.event.button !== 0) return
+  void setCenter(payload.position.x, payload.position.y, {
+    zoom: viewport.value.zoom,
+    duration: 280,
+  })
+}
 
 const model = computed(() => {
   if (!props.graph) return { nodes: [], edges: [] }
@@ -194,7 +204,11 @@ watch(selectedNode, () => {
   >
     <Background />
     <Controls />
-    <MiniMap />
+    <MiniMap
+      :pannable="true"
+      aria-label="Minimapa del flujo: haz clic para navegar"
+      @click="onMiniMapClick"
+    />
 
     <template #node-step="nodeProps">
       <StepNode :data="nodeProps.data" />
