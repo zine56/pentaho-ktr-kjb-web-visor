@@ -73,6 +73,7 @@ const displayName = computed(() => {
 }
 
 .step-node-card {
+  position: relative;
   width: 34px;
   height: 34px;
   background: #fcfdff;
