@@ -1,4 +1,4 @@
-import type { Edge, Node } from '@vue-flow/core'
+import { MarkerType, type Edge, type Node } from '@vue-flow/core'
 import type { KettleGraph, KettleNode, KettleNote } from '../model/graph'
 import { computePositions } from './layout'
 
@@ -117,12 +117,19 @@ export function toVueFlow(graph: KettleGraph): { nodes: Node<FlowNodeData>[]; ed
     const filterLabelStyle = e.filterResult
       ? FILTER_RESULT_LABEL_STYLE[e.filterResult]
       : undefined
+    const markerColor = typeof style.stroke === 'string' ? style.stroke : '#b1b1b7'
 
     return {
       id: e.id,
       source: e.from,
       target: e.to,
       class: Array.from(edgeClass),
+      markerEnd: {
+        type: MarkerType.ArrowClosed,
+        color: markerColor,
+        width: 18,
+        height: 18,
+      },
       ...(Object.keys(style).length === 0 ? {} : { style }),
       ...(e.filterResult && filterLabelStyle
         ? {
