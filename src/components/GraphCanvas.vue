@@ -101,6 +101,8 @@ const configDisplayState = computed(() => {
 
   const walk = (node: Element, depth = 0, pathPrefix = '') => {
     const name = node.localName ?? node.nodeName
+    const normalizedName = name.toLowerCase()
+    const isConfigurationNode = normalizedName === 'configuration'
     const label = pathPrefix ? `${pathPrefix} · ${name}` : name
     const elementChildren = Array.from(node.children)
     const textValue = toNodeText(node)
@@ -109,12 +111,13 @@ const configDisplayState = computed(() => {
       .join(', ')
 
     if (elementChildren.length === 0) {
+      if (isConfigurationNode) return
       const value = textValue || attrValue || '(sin valor)'
       rows.push({ key: label, value, depth })
       return
     }
 
-    if (attrValue) {
+    if (!isConfigurationNode && attrValue) {
       rows.push({
         key: `${label} (atributos)`,
         value: attrValue,
@@ -122,7 +125,7 @@ const configDisplayState = computed(() => {
       })
     }
 
-    if (textValue) {
+    if (!isConfigurationNode && textValue) {
       rows.push({
         key: `${label} (valor)`,
         value: textValue,
@@ -131,7 +134,7 @@ const configDisplayState = computed(() => {
     }
 
     for (const child of elementChildren) {
-      walk(child as Element, depth + 1, label)
+      walk(child as Element, isConfigurationNode ? depth : depth + 1, isConfigurationNode ? pathPrefix : label)
     }
   }
 
