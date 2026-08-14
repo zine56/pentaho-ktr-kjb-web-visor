@@ -81,21 +81,19 @@ function toNodeText(node: Node): string {
     .replace(/\s+/g, ' ')
 }
 
-const configDisplayRows = computed<ConfigField[]>(() => {
+type ConfigDisplayState = 'empty' | 'ready' | 'error'
+
+const configDisplayState = computed(() => {
   const text = configText.value
-  if (!text.trim()) return []
+  if (!text.trim()) {
+    return { state: 'empty', rows: [] as ConfigField[] }
+  }
 
   const parser = new DOMParser()
   const doc = parser.parseFromString(`<node-config>${text}</node-config>`, 'application/xml')
   const parserError = doc.getElementsByTagName('parsererror')[0]
   if (parserError) {
-    return [
-      {
-        key: 'Vista HTML no disponible',
-        value: text.trim(),
-        depth: 0,
-      },
-    ]
+    return { state: 'error', rows: [] as ConfigField[] }
   }
 
   const rows: ConfigField[] = []
@@ -111,11 +109,8 @@ const configDisplayRows = computed<ConfigField[]>(() => {
       .join(', ')
 
     if (elementChildren.length === 0) {
-      rows.push({
-        key: label,
-        value: textValue || attrValue || '(sin valor)',
-        depth,
-      })
+      const value = textValue || attrValue || '(sin valor)'
+      rows.push({ key: label, value, depth })
       return
     }
 
@@ -124,6 +119,14 @@ const configDisplayRows = computed<ConfigField[]>(() => {
         key: `${label} (atributos)`,
         value: attrValue,
         depth,
+      })
+    }
+
+    if (textValue) {
+      rows.push({
+        key: `${label} (valor)`,
+        value: textValue,
+        depth: depth + 1,
       })
     }
 
@@ -136,8 +139,10 @@ const configDisplayRows = computed<ConfigField[]>(() => {
     walk(node as Element, 0, '')
   }
 
-  return rows
+  return { state: 'ready', rows }
 })
+
+const configDisplayRows = computed<ConfigField[]>(() => configDisplayState.value.rows)
 
 async function copyConfig() {
   if (!configText.value) return
@@ -255,23 +260,27 @@ watch(selectedNode, () => {
               @click="copyConfig"
               :title="configText ? 'Copiar configuración del nodo' : 'No hay configuración para copiar'"
             >
-              <span aria-hidden="true">📋</span>
+            <span aria-hidden="true">📋</span>
               <span>Copiar configuración</span>
             </button>
             <span v-if="copyFeedback" class="node-config-copy-feedback">{{ copyFeedback }}</span>
           </div>
-          <div v-if="configDisplayRows.length" class="config-form">
+          <p v-if="configDisplayState.state === 'empty'" class="config-form-empty">No hay configuración disponible</p>
+          <p v-else-if="configDisplayState.state === 'error'" class="config-form-empty">
+            No se pudo generar la vista HTML de configuración. Revisa la pestaña
+            <strong>Configuración (XML)</strong>.
+          </p>
+          <div v-else class="config-form">
             <div
               v-for="(item, index) in configDisplayRows"
               :key="`${item.key}-${item.depth}-${index}`"
               class="config-form-row"
               :style="{ paddingLeft: `${item.depth * 14}px` }"
             >
-              <div class="config-form-key">{{ item.key }}</div>
-              <div class="config-form-value">{{ item.value }}</div>
+              <label class="config-form-key">{{ item.key }}</label>
+              <input class="config-form-value" type="text" :value="item.value" readonly />
             </div>
           </div>
-          <p v-else>No hay configuración disponible</p>
         </div>
       </section>
     </div>
@@ -429,12 +438,37 @@ watch(selectedNode, () => {
 }
 
 .config-form-value {
+  width: 100%;
   margin: 0;
   color: #0f172a;
   font-size: 12px;
   line-height: 1.25;
-  white-space: pre-wrap;
+  background: #fff;
+  border: 1px solid #cbd5e1;
+  border-radius: 5px;
+  padding: 5px 7px;
   word-break: break-word;
+}
+
+.config-form-empty {
+  margin: 6px 0;
+  color: #475569;
+}
+
+.node-config-body input.config-form-value {
+  appearance: none;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  color: #0f172a;
+  font-size: 12px;
+  line-height: 1.25;
+  border-radius: 5px;
+  padding: 6px 7px;
+  width: 100%;
+  box-sizing: border-box;
+  outline: none;
+  cursor: default;
+  min-height: 32px;
 }
 
 .node-config-actions {
