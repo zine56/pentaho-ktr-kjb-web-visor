@@ -278,7 +278,7 @@ function main(): void {
   }
 
   process.stdout.write([
-    `PASS export headless: ${basename(input)}`,
+    `${rendered.report.status} layout headless: ${basename(input)}`,
     `sha256=${sha256}`,
     `nodes=${rendered.report.graph.nodes}`,
     `edges=${rendered.report.graph.enabledEdges}`,

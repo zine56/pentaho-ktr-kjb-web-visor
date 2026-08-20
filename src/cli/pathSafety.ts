@@ -14,9 +14,15 @@ function canonicalPath(path: string): string {
   const absolute = resolve(path)
   if (existsSync(absolute)) return realpathSync.native(absolute)
 
-  const parent = dirname(absolute)
-  if (existsSync(parent)) return join(realpathSync.native(parent), basename(absolute))
-  return absolute
+  const missingSegments: string[] = []
+  let ancestor = absolute
+  while (!existsSync(ancestor)) {
+    const parent = dirname(ancestor)
+    if (parent === ancestor) return absolute
+    missingSegments.unshift(basename(ancestor))
+    ancestor = parent
+  }
+  return join(realpathSync.native(ancestor), ...missingSegments)
 }
 
 function identities(path: string, platform: NodeJS.Platform): string[] {
