@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
-import { Panel, useVueFlow, VueFlow } from '@vue-flow/core'
+import { Panel, useVueFlow, VueFlow, type NodeMouseEvent } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
 import { ControlButton, Controls } from '@vue-flow/controls'
 import { MiniMap } from '@vue-flow/minimap'
@@ -100,20 +100,14 @@ async function resetDiagram() {
   await fitView({ padding: 0.12, duration: 320 })
 }
 
-function onNodeClick(payload: {
-  event?: MouseEvent
-  node?: {
-    id: string
-    data: FlowNodeData
-  }
-}) {
-  if (payload.event && payload.event.button !== 0) return
-  if (!payload.node) return
-  if (payload.node.data.kind === 'note') return
+function onNodeClick(payload: NodeMouseEvent) {
+  if ('button' in payload.event && payload.event.button !== 0) return
+  const data = payload.node.data as FlowNodeData
+  if (data.kind === 'note') return
   selectedNode.value = {
     id: payload.node.id,
-    ...payload.node.data,
-    highlighted: payload.node.data.highlighted ?? false,
+    ...data,
+    highlighted: data.highlighted ?? false,
   }
   activeTab.value = 'config'
   copyFeedback.value = ''
@@ -143,8 +137,6 @@ function toNodeText(node: Node): string {
     .replaceAll('\n', ' ')
     .replace(/\s+/g, ' ')
 }
-
-type ConfigDisplayState = 'empty' | 'ready' | 'error'
 
 const configDisplayState = computed(() => {
   const text = configText.value
