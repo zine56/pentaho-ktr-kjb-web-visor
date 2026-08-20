@@ -111,6 +111,19 @@ describe('renderHeadlessDiagram', () => {
     }))
   })
 
+  it('fails closed when the diagram contains a visual warning', () => {
+    const source = graph({
+      edges: [],
+      notes: [{ id: 'note-warning', text: 'Nota encima', x: -40, y: 20, width: 80, height: 50 }],
+    })
+
+    const result = renderHeadlessDiagram(source)
+
+    expect(result.report.status).toBe('FAIL')
+    expect(result.report.blockingCollisionCount).toBe(0)
+    expect(result.report.warningCollisionCount).toBeGreaterThan(0)
+  })
+
   it('keeps source metadata redacted and records missing Spoon coordinates', () => {
     const source = graph()
     source.nodes[0] = { ...source.nodes[0], x: undefined }

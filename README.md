@@ -22,8 +22,10 @@ graph, using Pentaho's own step/entry icons.
 The headless exporter reads one local `.ktr`/`.kjb`, preserves its Spoon
 coordinates and creates a self-contained SVG plus a JSON report. The diagnostic
 view uses conservative label footprints, orthogonal hops and highlights
-node/label collisions. It never serializes step configuration, SQL, credentials,
-absolute paths or timestamps.
+node/label collisions. It serializes the graph name, visible step names/types
+and note text, so those labels must be reviewed before sharing. It does not
+serialize `configXml`, inject the absolute input path or add timestamps or
+external resources.
 
 ```powershell
 npm run export:headless -- `
@@ -43,8 +45,10 @@ npm run export:headless -- `
   --browser "C:\Program Files\Google\Chrome\Application\chrome.exe"
 ```
 
-Use `--fail-on-collisions` as an automated gate and `--force` only when an
-existing diagnostic artifact is intentionally being regenerated. The SVG is
+Use `--fail-on-collisions` as a fail-closed automated gate: both blocking
+collisions and visual warnings reject the render. Use `--force` only when an
+existing diagnostic artifact is intentionally being regenerated. Input,
+browser and output paths must all identify different local files. The SVG is
 the canonical deterministic artifact; PNG bytes may vary with browser, OS and
 installed fonts. Both formats contain visible step and note text, so review
 them before sharing.

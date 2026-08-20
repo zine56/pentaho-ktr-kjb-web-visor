@@ -645,7 +645,7 @@ export function renderHeadlessDiagram(graph: KettleGraph, options: HeadlessDiagr
     'note-node': collisions.filter((collision) => collision.kind === 'note-node').length,
   }
   const report: HeadlessLayoutReport = {
-    status: blocking.length === 0 ? 'PASS' : 'FAIL',
+    status: blocking.length === 0 && warnings.length === 0 ? 'PASS' : 'FAIL',
     graph: {
       kind: positionedGraph.kind,
       name: positionedGraph.name,

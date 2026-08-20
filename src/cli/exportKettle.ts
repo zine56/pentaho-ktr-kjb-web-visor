@@ -16,6 +16,7 @@ import { pathToFileURL } from 'node:url'
 import { JSDOM } from 'jsdom'
 import { renderHeadlessDiagram, type Rect } from '../export/headlessDiagram'
 import { parseKettleFile } from '../parser/parseKettleXml'
+import { assertDistinctPaths } from './pathSafety'
 
 interface CliOptions {
   input: string
@@ -232,7 +233,14 @@ function main(): void {
 
   if (!existsSync(input)) throw new Error('No existe el archivo KTR/KJB de entrada.')
   if (extension !== '.ktr' && extension !== '.kjb') throw new Error('La entrada debe ser .ktr o .kjb.')
-  if ([svg, report, png, positions].filter(Boolean).includes(input)) throw new Error('Una salida no puede reemplazar el archivo de entrada.')
+  assertDistinctPaths([
+    { label: '--input', path: input },
+    ...(browser ? [{ label: '--browser', path: browser }] : []),
+    { label: '--svg', path: svg },
+    { label: '--report', path: report },
+    ...(png ? [{ label: '--png', path: png }] : []),
+    ...(positions ? [{ label: '--positions', path: positions }] : []),
+  ])
 
   ensureWritable(svg, options.force)
   ensureWritable(report, options.force)
