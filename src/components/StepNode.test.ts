@@ -6,7 +6,7 @@ describe('StepNode', () => {
   it('renders the icon image and the node name', () => {
     const wrapper = mount(StepNode, {
       props: {
-        data: { name: 'Table input', type: 'TableInput', kind: 'step' },
+        data: { uid: 'n-0001', name: 'Table input', type: 'TableInput', kind: 'step' },
       },
       global: {
         stubs: { Handle: true },
@@ -20,7 +20,7 @@ describe('StepNode', () => {
   it('adds the special styling for SPECIAL job entries', () => {
     const wrapper = mount(StepNode, {
       props: {
-        data: { name: 'START', type: 'SPECIAL', kind: 'entry' },
+        data: { uid: 'n-0001', name: 'START', type: 'SPECIAL', kind: 'entry' },
       },
       global: {
         stubs: { Handle: true },

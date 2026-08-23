@@ -216,7 +216,7 @@ function parseStepErrorHandlingFromName(el: Element): { source?: string; target?
     ?? el.getAttribute('target')
     ?? el.getAttribute('target_step')
 
-  return { source, target }
+  return { source: source ?? undefined, target: target ?? undefined }
 }
 
 type ErrorHandlerReference = {

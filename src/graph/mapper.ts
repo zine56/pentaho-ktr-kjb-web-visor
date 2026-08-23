@@ -35,7 +35,7 @@ const DISABLED_EDGE_STYLE = {
 
 const ERROR_HANDLER_EDGE_STYLE = {
   stroke: '#b91c1c',
-  strokeWidth: 2,
+  strokeWidth: 2.4,
 }
 
 const FILTER_RESULT_LABEL_STYLE = {
@@ -69,7 +69,7 @@ function resolveEdgeHandles(
     : { sourceHandle: 'source-top', targetHandle: 'target-bottom' }
 }
 
-function toNoteNode(note: KettleNote): Node<NoteNodeData> {
+function toNoteNode(note: KettleNote): Node<FlowNodeData> {
   return {
     id: note.id,
     type: 'note',
@@ -103,7 +103,7 @@ function toNoteNode(note: KettleNote): Node<NoteNodeData> {
 export function toVueFlow(graph: KettleGraph): { nodes: Node<FlowNodeData>[]; edges: Edge[] } {
   const positions = computePositions(graph)
 
-  const stepNodes: Node<StepNodeData>[] = graph.nodes.map((n) => ({
+  const stepNodes: Node<FlowNodeData>[] = graph.nodes.map((n) => ({
     id: n.id,
     type: 'step',
     position: positions[n.id] ?? { x: 0, y: 0 },
