@@ -117,7 +117,9 @@ function readNodes(stepElements: HTMLCollectionOf<Element>, kind: 'step' | 'entr
     const el = stepElements[i]
     const name = textOf(el, 'name') ?? ''
     const type = textOf(el, 'type') ?? ''
-    const gui = child(el, 'GUI')
+    // Spoon guarda las coordenadas de los pasos KTR en <GUI>, pero las de las
+    // entradas KJB directamente bajo <entry>.
+    const gui = child(el, 'GUI') ?? (kind === 'entry' ? el : null)
     const isFilterRows = kind === 'step' && isFilterRowsType(type)
     nodes.push({
       name,
