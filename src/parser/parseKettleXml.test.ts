@@ -124,6 +124,21 @@ describe('parseKettleXml', () => {
     expect(g.edges[0].errorHandler).toBe(true)
   })
 
+  it('reads job entry coordinates stored directly under <entry> as Spoon saves them', () => {
+    const xml = `<job>
+      <name>spoon</name>
+      <entries>
+        <entry><name>START</name><type>SPECIAL</type><draw>Y</draw><xloc>32</xloc><yloc>48</yloc></entry>
+        <entry><name>Run</name><type>TRANS</type><draw>N</draw><xloc>880</xloc><yloc>4016</yloc></entry>
+      </entries>
+      <hops/>
+    </job>`
+
+    const g = parseKettleFile(xml, 'spoon.kjb')
+    expect(g.nodes.map((n) => [n.name, n.x, n.y])).toEqual([['START', 32, 48], ['Run', 880, 4016]])
+    expect(g.nodes[1].draw).toBe(false)
+  })
+
   it('reads an error-handler hop from error attribute', () => {
     const xml = `<job>
       <name>err</name>
